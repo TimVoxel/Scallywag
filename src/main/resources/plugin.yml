@@ -1,0 +1,4 @@
+name: Scallywag
+version: '${project.version}'
+main: me.timpixel.Scallywag
+api-version: '1.21.8'
