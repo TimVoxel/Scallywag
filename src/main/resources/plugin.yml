@@ -1,4 +1,20 @@
 name: Scallywag
-version: '${project.version}'
+version: '1.0'
 main: me.timpixel.Scallywag
 api-version: '1.21.8'
+permissions:
+  scallywag.admin:
+    description: admin permission
+commands:
+  register:
+    usage: /<command> <password>
+    description: allows the player to register on the server
+    aliases: r
+  login:
+    usage: /<command> <password>
+    description: allows a registered player to login to the server
+    aliases: l
+  registration:
+    usage: /<command> <username>
+    permission: scallywag.admin
+    description: manages registrations

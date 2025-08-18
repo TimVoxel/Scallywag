@@ -5,18 +5,18 @@ plugins {
 group = "me.timpixel"
 version = "1.0-SNAPSHOT"
 project.version = version
-project.version = "1.0-SNAPSHOT"
 
 repositories {
+    mavenCentral()
     maven {
         name = "papermc"
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
-    mavenCentral()
 }
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
     implementation("org.mindrot:jbcrypt:0.4")
+    implementation("org.apache.logging.log4j:log4j-core:3.0.0-beta3")
+    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
 }
 
 tasks.withType<Jar> {

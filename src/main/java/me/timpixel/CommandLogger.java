@@ -6,21 +6,21 @@ import org.bukkit.command.CommandSender;
 
 public class CommandLogger
 {
-    public boolean info(CommandSender sender, String message)
+    public static boolean info(CommandSender sender, String message)
     {
-        sender.sendMessage(Component.text("[info]" + message));
+        sender.sendMessage(Component.text("[info] " + message));
         return true;
     }
 
-    public boolean warning(CommandSender sender, String message)
+    public static boolean warning(CommandSender sender, String message)
     {
-        sender.sendMessage(Component.text("[warning]" + message).color(NamedTextColor.YELLOW));
+        sender.sendMessage(Component.text("[warning] " + message).color(NamedTextColor.YELLOW));
         return true;
     }
 
-    public boolean error(CommandSender sender, String message)
+    public static boolean error(CommandSender sender, String message)
     {
-        sender.sendMessage(Component.text("[error]" + message).color(NamedTextColor.RED));
+        sender.sendMessage(Component.text("[error] " + message).color(NamedTextColor.RED));
         return true;
     }
 }
