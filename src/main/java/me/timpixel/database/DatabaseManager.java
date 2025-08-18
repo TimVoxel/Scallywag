@@ -20,37 +20,22 @@ public class DatabaseManager
         this.connectionPool = connectionPool;
     }
 
-    public static @Nullable DatabaseManager tryCreate(DatabaseConnectionInfo connectionInfo)
+    public static DatabaseManager tryCreate(DatabaseConnectionInfo connectionInfo) throws SQLException
     {
-        try
-        {
-            var initialSize = 1;
-            var pool = ConnectionPool.create(connectionInfo, initialSize);
-            return new DatabaseManager(pool);
-        }
-        catch (SQLException exception)
-        {
-            Scallywag.logger().severe(exception.getMessage());
-            return null;
-        }
+        var initialSize = 1;
+        var pool = ConnectionPool.create(connectionInfo, initialSize);
+        return new DatabaseManager(pool);
     }
 
-    public void init()
+    public void init() throws SQLException
     {
-        try
-        {
-            var connection = connectionPool.take();
+        var connection = connectionPool.take();
 
-            try (var statement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS scallywag_players(uuid BINARY(16) primary key, username VARCHAR(16), password VARCHAR(60))"))
-            {
-                statement.execute();
-            }
-            connection.free();
-        }
-        catch (SQLException exception)
+        try (var statement = connection.prepareStatement("CREATE TABLE IF NOT EXISTS scallywag_players(uuid BINARY(16) primary key, username VARCHAR(16), password VARCHAR(60))"))
         {
-            Scallywag.logger().severe(exception.getMessage());
+            statement.execute();
         }
+        connection.free();
     }
 
     public @Nullable PlayerRegistration getRegistration(UUID uuid) throws SQLException

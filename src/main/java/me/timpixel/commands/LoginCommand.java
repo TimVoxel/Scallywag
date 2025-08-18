@@ -36,7 +36,7 @@ public class LoginCommand implements TabExecutor
 
         var password = args[0];
 
-        return switch (registrationManager.tryLogin(player, password))
+        return switch (registrationManager.tryLogIn(player, password))
         {
             case SUCCESSFUL -> CommandLogger.info(sender, "Successfully logged in!");
             case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");

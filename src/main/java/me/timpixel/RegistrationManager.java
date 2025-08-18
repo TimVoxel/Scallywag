@@ -1,6 +1,7 @@
 package me.timpixel;
 
 import me.timpixel.database.DatabaseManager;
+import me.timpixel.listeners.LoginListener;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 import org.mindrot.jbcrypt.BCrypt;
@@ -15,11 +16,13 @@ public class RegistrationManager
     private final List<String> registeredUsernames;
 
     private final @Nullable DatabaseManager databaseManager;
+    private final List<LoginListener> listeners;
 
     public RegistrationManager(@Nullable DatabaseManager databaseManager)
     {
         this.databaseManager = databaseManager;
         this.loggedInPlayers = new HashSet<>();
+        this.listeners = new ArrayList<>();
 
         registeredUsernames = new ArrayList<>();
 
@@ -35,6 +38,16 @@ public class RegistrationManager
                 logException(exception);
             }
         }
+    }
+
+    public void addListener(LoginListener listener)
+    {
+        listeners.add(listener);
+    }
+
+    public void removeListener(LoginListener listener)
+    {
+        listeners.remove(listener);
     }
 
     private void logException(Exception exception)
@@ -82,22 +95,21 @@ public class RegistrationManager
         }
     }
 
-    public LoginResult tryLogin(Player player, String actualPassword)
+    public LoginResult tryLogIn(Player player, String actualPassword)
     {
-        var uuid = player.getUniqueId();
-
-        if (loggedInPlayers.contains(uuid))
-        {
-            return LoginResult.ALREADY_LOGGED_IN;
-        }
-
         if (databaseManager == null)
         {
             return LoginResult.INTERNAL_ERROR;
         }
 
+        if (isLoggedIn(player))
+        {
+            return LoginResult.ALREADY_LOGGED_IN;
+        }
+
         try
         {
+            var uuid = player.getUniqueId();
             var registration = databaseManager.getRegistration(uuid);
 
             if (registration == null)
@@ -116,12 +128,17 @@ public class RegistrationManager
 
                 if (!storedName.equals(actualName))
                 {
-                    Scallywag.logger().info("Player with uuid " + uuid + "logged in with a different username, updating username to: \"" + actualName + "\"");
+                    Scallywag.logger().info("Player with uuid " + uuid + " logged in with a different username, updating username to: \"" + actualName + "\"");
                     databaseManager.updatePlayerName(uuid, actualName);
                 }
                 else
                 {
                     Scallywag.logger().info("Player \"" + actualName + "\" successfully logged in (uuid: " + uuid + ")");
+                }
+
+                for (var listener : listeners)
+                {
+                    listener.onPlayerLoggedIn(uuid, storedName);
                 }
 
                 return LoginResult.SUCCESSFUL;
@@ -135,6 +152,19 @@ public class RegistrationManager
         {
             logException(exception);
             return LoginResult.INTERNAL_ERROR;
+        }
+    }
+
+    public void tryLogOut(Player player)
+    {
+        var uuid = player.getUniqueId();
+
+        if (loggedInPlayers.remove(uuid))
+        {
+            for (var listener : listeners)
+            {
+                listener.onPlayerLoggedOut(uuid, player.getName());
+            }
         }
     }
 
@@ -192,5 +222,10 @@ public class RegistrationManager
             logException(exception);
             return RegistrationRemovalResult.INTERNAL_ERROR;
         }
+    }
+
+    public boolean isLoggedIn(Player player)
+    {
+        return loggedInPlayers.contains(player.getUniqueId());
     }
 }

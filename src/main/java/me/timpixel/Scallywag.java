@@ -5,14 +5,20 @@ import me.timpixel.commands.RegisterCommand;
 import me.timpixel.commands.RegistrationCommand;
 import me.timpixel.database.DatabaseConnectionInfo;
 import me.timpixel.database.DatabaseManager;
+import me.timpixel.listeners.PlayerJoinQuitListener;
+import me.timpixel.listeners.UnauthorisedPlayerListener;
 import me.timpixel.logging.PasswordLogFilter;
 import org.apache.logging.log4j.LogManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Nullable;
 
+import java.sql.SQLException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Scallywag extends JavaPlugin
@@ -24,7 +30,7 @@ public class Scallywag extends JavaPlugin
 
     private static Scallywag instance;
     private Logger logger;
-    private DatabaseManager databaseManager;
+    private @Nullable DatabaseManager databaseManager;
     private RegistrationManager registrationManager;
 
     private static Permission adminPermission;
@@ -37,31 +43,69 @@ public class Scallywag extends JavaPlugin
         logger = getLogger();
         ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger()).addFilter(new PasswordLogFilter());
 
-        instance = this;
+        var config = setupConfig();
 
-        logger.info("Scallywag authentication plugin enabled successfully");
-
-        var config = getConfig();
-        config.addDefault("databaseConnection", new DatabaseConnectionInfo(
-                "jdbc:mysql://localhost/scallywag",
-                "user",
-                "password"));
-        config.options().copyDefaults(true);
-        saveConfig();
-
-        var databaseConfig = (DatabaseConnectionInfo) config.get("databaseConnection");
-        databaseManager = DatabaseManager.tryCreate(databaseConfig);
-
-        if (databaseManager != null)
-        {
-            databaseManager.init();
-        }
-
+        setupDatabase((DatabaseConnectionInfo) config.get("databaseConnection"));
         registrationManager = new RegistrationManager(databaseManager);
 
         registerCommand("register", new RegisterCommand(registrationManager));
         registerCommand("login", new LoginCommand(registrationManager));
         registerCommand("registration", new RegistrationCommand(registrationManager));
+
+        registerEvents(config.getBoolean("freezeUnauthorisedPlayers"),
+                config.getBoolean("keepQuittersLoggedIn"),
+                config.getBoolean("applyDarknessToUnauthorisedPlayers"));
+
+        instance = this;
+        logger.info("Scallywag authentication plugin enabled successfully");
+    }
+
+    private FileConfiguration setupConfig()
+    {
+        var config = getConfig();
+        config.addDefault("databaseConnection", new DatabaseConnectionInfo(
+                "jdbc:mysql://localhost/scallywag",
+                "user",
+                "password"));
+        config.addDefault("freezeUnauthorisedPlayers", true);
+        config.addDefault("keepQuittersLoggedIn", true);
+        config.addDefault("applyDarknessToUnauthorisedPlayers", true);
+        config.options().copyDefaults(true);
+        saveConfig();
+        return config;
+    }
+
+    private void setupDatabase(DatabaseConnectionInfo connectionInfo)
+    {
+        try
+        {
+            databaseManager = DatabaseManager.tryCreate(connectionInfo);
+            databaseManager.init();
+        }
+        catch (SQLException exception)
+        {
+            logger.log(Level.SEVERE, "Unable to initialize the database", exception);
+        }
+    }
+
+    private void registerEvents(boolean shouldFreezeNonLoggedIn,
+                                boolean keepQuittersLoggedIn,
+                                boolean applyDarknessToUnauthorisedPlayers)
+    {
+        var pluginManager = getServer().getPluginManager();
+
+        if (shouldFreezeNonLoggedIn)
+        {
+            var unauthorisedPlayerListener = new UnauthorisedPlayerListener(registrationManager);
+            pluginManager.registerEvents(unauthorisedPlayerListener, this);
+        }
+
+        var playerJoinListener = new PlayerJoinQuitListener(registrationManager,
+                keepQuittersLoggedIn,
+                applyDarknessToUnauthorisedPlayers);
+
+        pluginManager.registerEvents(playerJoinListener, this);
+        registrationManager.addListener(playerJoinListener);
     }
 
     private void registerCommand(String name, TabExecutor executor)
