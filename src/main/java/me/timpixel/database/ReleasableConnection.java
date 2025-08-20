@@ -32,4 +32,9 @@ public class ReleasableConnection
     {
         isFree = true;
     }
+
+    public void close() throws SQLException
+    {
+        connection.close();
+    }
 }

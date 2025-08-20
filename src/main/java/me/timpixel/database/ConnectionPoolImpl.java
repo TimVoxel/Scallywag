@@ -1,12 +1,17 @@
 package me.timpixel.database;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ConnectionPoolImpl implements ConnectionPool
 {
+    private final ReentrantLock accessLock = new ReentrantLock();
     private final DatabaseConnectionInfo connectionInfo;
     private final List<ReleasableConnection> pool;
 
@@ -25,28 +30,52 @@ public class ConnectionPoolImpl implements ConnectionPool
     @Override
     public ReleasableConnection take() throws SQLException
     {
-        for (var connection : pool)
+        accessLock.lock();
+        try
         {
-            if (connection.isFree())
+            for (var connection : pool)
             {
-                return connection.take();
+                if (connection.isFree())
+                {
+                    return connection.take();
+                }
             }
-        }
 
-        var connection = ConnectionPool.createConnection(connectionInfo);
-        var releasable = new ReleasableConnection(connection);
-        pool.add(releasable);
-        return releasable.take();
+            var connection = ConnectionPool.createConnection(connectionInfo);
+            var releasable = new ReleasableConnection(connection);
+            pool.add(releasable);
+            return releasable.take();
+        }
+        finally
+        {
+            accessLock.unlock();
+        }
     }
 
     public int size()
     {
-        return pool.size();
+        int poolSize;
+        accessLock.lock();
+        try
+        {
+            poolSize = pool.size();
+        }
+        finally
+        {
+            accessLock.unlock();
+        }
+        return poolSize;
     }
 
     @Override
     public DatabaseConnectionInfo connectionInfo()
     {
         return connectionInfo;
+    }
+
+    @Override
+    public @NotNull Iterator<ReleasableConnection> iterator()
+    {
+        return pool.iterator();
     }
 }

@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-public interface ConnectionPool
+public interface ConnectionPool extends Iterable<ReleasableConnection>
 {
     ReleasableConnection take() throws SQLException;
     DatabaseConnectionInfo connectionInfo();

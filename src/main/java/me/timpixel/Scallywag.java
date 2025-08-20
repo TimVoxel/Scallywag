@@ -29,6 +29,7 @@ public class Scallywag extends JavaPlugin
 
     private static Scallywag instance;
     private Logger logger;
+    private DatabaseManager databaseManager;
     private RegistrationManager registrationManager;
 
     private static Permission adminPermission;
@@ -44,7 +45,6 @@ public class Scallywag extends JavaPlugin
         var config = setupConfig();
 
         var databaseConnectionInfo = (DatabaseConnectionInfo) config.get("databaseConnection");
-        DatabaseManager databaseManager;
 
         try
         {
@@ -128,6 +128,20 @@ public class Scallywag extends JavaPlugin
     public void onDisable()
     {
         logger.info("Disabled Scallywag authentication plugin");
+
+        if (registrationManager instanceof DatabaseRegistrationManager databaseRegistrationManager)
+        {
+            databaseRegistrationManager.shutdown();
+        }
+
+        try
+        {
+            databaseManager.shutdown();
+        }
+        catch (SQLException exception)
+        {
+            logger.log(Level.SEVERE, "Unable to shutdown database due to an exception: ", exception);
+        }
     }
 
     public static Logger logger()

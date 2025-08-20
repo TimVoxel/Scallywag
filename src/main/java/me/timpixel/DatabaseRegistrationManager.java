@@ -4,14 +4,12 @@ import me.timpixel.database.DatabaseManager;
 import me.timpixel.listeners.LoginListener;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
-import org.mindrot.jbcrypt.BCrypt;
-
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 
 public class DatabaseRegistrationManager implements RegistrationManager
 {
+    private final PasswordVerifier passwordVerifier;
     private final Set<UUID> loggedInPlayers;
     private final List<String> registeredUsernames;
 
@@ -31,12 +29,19 @@ public class DatabaseRegistrationManager implements RegistrationManager
         try
         {
             var registeredInDatabase = databaseManager.getRegisteredUsernames();
-            registeredUsernames.addAll(registeredInDatabase);
+            registeredUsernames.addAll(registeredInDatabase.get());
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
         }
+
+        passwordVerifier = new PasswordVerifier();
+    }
+
+    public void shutdown()
+    {
+        passwordVerifier.shutdown();
     }
 
     @Override
@@ -64,7 +69,8 @@ public class DatabaseRegistrationManager implements RegistrationManager
             }
             else
             {
-                databaseManager.tryRegisterPlayer(uuid, username, password);
+                databaseManager.tryRegisterPlayer(uuid, username, password).get();
+
                 registeredUsernames.add(username);
                 Scallywag.logger().info("Added new registration of player \"" + username + "\", uuid: " + uuid);
 
@@ -75,7 +81,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
                 return RegistrationResult.SUCCESSFUL;
             }
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return RegistrationResult.INTERNAL_ERROR;
@@ -92,7 +98,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
 
         try
         {
-            var registration = databaseManager.getRegistration(uuid);
+            var registration = databaseManager.getRegistration(uuid).get();
 
             if (registration == null)
             {
@@ -100,8 +106,9 @@ public class DatabaseRegistrationManager implements RegistrationManager
             }
 
             var expectedPassword = registration.passwordHash();
+            var isCorrectPassword = passwordVerifier.verify(actualPassword, expectedPassword).get();
 
-            if (BCrypt.checkpw(actualPassword, expectedPassword))
+            if (isCorrectPassword)
             {
                 var storedUsername = registration.username();
                 logIn(uuid, storedUsername, username);
@@ -112,7 +119,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
                 return LoginResult.WRONG_PASSWORD;
             }
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return LoginResult.INTERNAL_ERROR;
@@ -153,10 +160,10 @@ public class DatabaseRegistrationManager implements RegistrationManager
     {
         try
         {
-            var deletedRegistration = databaseManager.deleteRegistrationWithUUID(uuid);
+            var deletedRegistration = databaseManager.deleteRegistrationWithUUID(uuid).get();
             return processDeletedRegistration(deletedRegistration);
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return RegistrationRemovalResult.INTERNAL_ERROR;
@@ -168,10 +175,10 @@ public class DatabaseRegistrationManager implements RegistrationManager
     {
         try
         {
-            var deletedRegistration = databaseManager.deleteRegistrationsWithUsername(username, 1);
+            var deletedRegistration = databaseManager.deleteRegistrationsWithUsername(username, 1).get();
             return processDeletedRegistration(deletedRegistration);
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return RegistrationRemovalResult.INTERNAL_ERROR;
@@ -206,10 +213,10 @@ public class DatabaseRegistrationManager implements RegistrationManager
     {
         try
         {
-            var registration = databaseManager.getRegistration(uuid);
+            var registration = databaseManager.getRegistration(uuid).get();
             return updateRegistrationProperty(registration, property, value);
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return UpdateResult.INTERNAL_ERROR;
@@ -221,10 +228,10 @@ public class DatabaseRegistrationManager implements RegistrationManager
     {
         try
         {
-            var registration = databaseManager.getRegistration(username);
+            var registration = databaseManager.getRegistration(username).get();
             return updateRegistrationProperty(registration, property, value);
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return UpdateResult.INTERNAL_ERROR;
@@ -272,11 +279,11 @@ public class DatabaseRegistrationManager implements RegistrationManager
 
         try
         {
-            databaseManager.updatePlayerUsername(uuid, newUsername);
+            databaseManager.updatePlayerUsername(uuid, newUsername).get();
             Scallywag.logger().info("Updated username of player " + uuid + " to: " + newUsername);
             return UpdateResult.SUCCESSFUL;
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return UpdateResult.INTERNAL_ERROR;
@@ -288,11 +295,11 @@ public class DatabaseRegistrationManager implements RegistrationManager
         //Do not account for matching values because that would expose the password
         try
         {
-            databaseManager.updatePlayerPassword(uuid, newPassword);
+            databaseManager.updatePlayerPassword(uuid, newPassword).get();
             Scallywag.logger().info("Updated password of player " + uuid);
             return UpdateResult.SUCCESSFUL;
         }
-        catch (SQLException exception)
+        catch (Exception exception)
         {
             logException(exception);
             return UpdateResult.INTERNAL_ERROR;
