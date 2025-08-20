@@ -46,7 +46,7 @@ public class RegistrationRemoveCommand implements SubCommand
             {
                 case SUCCESSFUL -> CommandLogger.info(sender, "Successfully removed registration of player with uuid " + stringUUID);
                 case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to remove registration due to an internal error");
-                case NOT_FOUND -> CommandLogger.warning(sender, "Unable to find the registration with uuid " + stringUUID);
+                case NOT_FOUND -> CommandLogger.error(sender, "Unable to find the registration with uuid " + stringUUID);
             };
 
         }

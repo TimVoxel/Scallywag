@@ -36,7 +36,7 @@ public class RegisterCommand implements TabExecutor
 
         var password = args[0];
 
-        return switch (registrationManager.tryRegister(player, password))
+        return switch (registrationManager.tryRegister(player.getUniqueId(), player.getName(), password))
         {
             case SUCCESSFUL -> CommandLogger.info(sender, "Registration successful!");
             case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");

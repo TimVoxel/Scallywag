@@ -15,7 +15,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.permissions.Permission;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.util.logging.Level;
@@ -30,7 +29,6 @@ public class Scallywag extends JavaPlugin
 
     private static Scallywag instance;
     private Logger logger;
-    private @Nullable DatabaseManager databaseManager;
     private RegistrationManager registrationManager;
 
     private static Permission adminPermission;
@@ -45,8 +43,23 @@ public class Scallywag extends JavaPlugin
 
         var config = setupConfig();
 
-        setupDatabase((DatabaseConnectionInfo) config.get("databaseConnection"));
-        registrationManager = new RegistrationManager(databaseManager);
+        var databaseConnectionInfo = (DatabaseConnectionInfo) config.get("databaseConnection");
+        DatabaseManager databaseManager;
+
+        try
+        {
+            databaseManager = DatabaseManager.tryCreate(databaseConnectionInfo);
+            databaseManager.init();
+        }
+        catch (SQLException exception)
+        {
+            logger.log(Level.SEVERE, "Unable to initialize the database, disabling Scallywag authentication", exception);
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        var automaticallyLogInUponRegistration = config.getBoolean("automaticallyLogInUponRegistration");
+        registrationManager = RegistrationManager.database(databaseManager, automaticallyLogInUponRegistration);
 
         registerCommand("register", new RegisterCommand(registrationManager));
         registerCommand("login", new LoginCommand(registrationManager));
@@ -70,22 +83,10 @@ public class Scallywag extends JavaPlugin
         config.addDefault("freezeUnauthorisedPlayers", true);
         config.addDefault("keepQuittersLoggedIn", true);
         config.addDefault("applyDarknessToUnauthorisedPlayers", true);
+        config.addDefault("autoLogInUponRegistration", false);
         config.options().copyDefaults(true);
         saveConfig();
         return config;
-    }
-
-    private void setupDatabase(DatabaseConnectionInfo connectionInfo)
-    {
-        try
-        {
-            databaseManager = DatabaseManager.tryCreate(connectionInfo);
-            databaseManager.init();
-        }
-        catch (SQLException exception)
-        {
-            logger.log(Level.SEVERE, "Unable to initialize the database", exception);
-        }
     }
 
     private void registerEvents(boolean shouldFreezeNonLoggedIn,

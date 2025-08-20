@@ -40,7 +40,7 @@ public class PasswordLogFilter extends AbstractFilter
     private Result shouldLog(String msg)
     {
         return (msg != null && msg.contains("issued server command:") &&
-                (msg.contains("/login") || msg.contains("/register") || msg.contains("/registration add")))
+                (msg.contains("/login") || msg.contains("/register") || msg.contains("/registration")))
                 ? Result.DENY
                 : Result.NEUTRAL;
     }

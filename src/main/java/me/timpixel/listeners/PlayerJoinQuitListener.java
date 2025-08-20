@@ -42,7 +42,8 @@ public class PlayerJoinQuitListener implements Listener, LoginListener
     {
         if (!keepQuittersLoggedIn)
         {
-            registrationManager.tryLogOut(event.getPlayer());
+            var player = event.getPlayer();
+            registrationManager.tryLogOut(player.getUniqueId(), player.getName());
         }
     }
 

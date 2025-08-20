@@ -3,7 +3,6 @@ package me.timpixel.listeners;
 import io.papermc.paper.event.player.PlayerPickBlockEvent;
 import io.papermc.paper.event.player.PlayerPickEntityEvent;
 import io.papermc.paper.event.player.PlayerPickItemEvent;
-import me.timpixel.PlayerRegistration;
 import me.timpixel.RegistrationManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public class TypeConversionUtil
 {
-    public static byte[] uuidToBinary(UUID uuid)
+    public static byte[] uuidToBytes(UUID uuid)
     {
         var byteBuffer = ByteBuffer.wrap(new byte[16]);
         byteBuffer.putLong(uuid.getMostSignificantBits());
@@ -13,7 +13,7 @@ public class TypeConversionUtil
         return byteBuffer.array();
     }
 
-    public static UUID binaryToUUID(byte[] bytes)
+    public static UUID bytesToUUID(byte[] bytes)
     {
         if (bytes == null || bytes.length != 16)
         {

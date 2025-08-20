@@ -19,9 +19,10 @@ public class RegistrationCommand extends RootCommand
     @Override
     protected SubCommand[] getSubCommands()
     {
-        var sub = new SubCommand[2];
+        var sub = new SubCommand[3];
         sub[0] = new RegistrationAddCommand(this);
         sub[1] = new RegistrationRemoveCommand(this);
+        sub[2] = new RegistrationModifyCommand(this);
         return sub;
     }
 

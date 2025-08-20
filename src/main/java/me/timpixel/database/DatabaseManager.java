@@ -1,7 +1,6 @@
 package me.timpixel.database;
 
 import me.timpixel.PlayerRegistration;
-import me.timpixel.Scallywag;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
@@ -44,7 +43,7 @@ public class DatabaseManager
 
         try (var query = connection.prepareStatement("SELECT * FROM scallywag_players WHERE uuid = ? LIMIT 1"))
         {
-            var binary = TypeConversionUtil.uuidToBinary(uuid);
+            var binary = TypeConversionUtil.uuidToBytes(uuid);
             query.setBytes(1, binary);
 
             var resultSet = query.executeQuery();
@@ -84,7 +83,7 @@ public class DatabaseManager
     {
         if (resultSet.next())
         {
-            var uuid = TypeConversionUtil.binaryToUUID(resultSet.getBytes(1));
+            var uuid = TypeConversionUtil.bytesToUUID(resultSet.getBytes(1));
             var username = resultSet.getString(2);
             var password = resultSet.getString(3);
             return new PlayerRegistration(uuid, username, password);
@@ -94,9 +93,8 @@ public class DatabaseManager
 
     public void tryRegisterPlayer(UUID uuid, String username, String password) throws SQLException
     {
-        var salt = BCrypt.gensalt();
-        var hashedPassword = BCrypt.hashpw(password, salt);
-        var byteUUID = TypeConversionUtil.uuidToBinary(uuid);
+        var hashedPassword = hashPassword(password);
+        var byteUUID = TypeConversionUtil.uuidToBytes(uuid);
 
         var connection = connectionPool.take();
 
@@ -111,10 +109,9 @@ public class DatabaseManager
         connection.free();
     }
 
-    public void updatePlayerName(UUID uuid, String username) throws SQLException
+    public void updatePlayerUsername(UUID uuid, String username) throws SQLException
     {
-        var byteUUID = TypeConversionUtil.uuidToBinary(uuid);
-
+        var byteUUID = TypeConversionUtil.uuidToBytes(uuid);
         var connection = connectionPool.take();
 
         try (var statement = connection.prepareStatement("UPDATE scallywag_players SET username = ? WHERE uuid = ?"))
@@ -124,6 +121,22 @@ public class DatabaseManager
             statement.executeUpdate();
 
         }
+        connection.free();
+    }
+
+    public void updatePlayerPassword(UUID uuid, String password) throws SQLException
+    {
+        var byteUUID = TypeConversionUtil.uuidToBytes(uuid);
+        var hashedPassword = hashPassword(password);
+        var connection = connectionPool.take();
+
+        try (var statement = connection.prepareStatement("UPDATE scallywag_players SET password = ? WHERE uuid = ?"))
+        {
+            statement.setString(1, hashedPassword);
+            statement.setBytes(2, byteUUID);
+            statement.executeUpdate();
+        }
+
         connection.free();
     }
 
@@ -139,7 +152,7 @@ public class DatabaseManager
         }
         else
         {
-            var uuid = TypeConversionUtil.uuidToBinary(registration.uuid());
+            var uuid = TypeConversionUtil.uuidToBytes(registration.uuid());
 
             try (var statement = connection.prepareStatement("DELETE FROM scallywag_players WHERE uuid = ? LIMIT ?"))
             {
@@ -155,7 +168,7 @@ public class DatabaseManager
 
     public @Nullable PlayerRegistration deleteRegistrationWithUUID(UUID uuid) throws SQLException
     {
-        var byteUUID = TypeConversionUtil.uuidToBinary(uuid);
+        var byteUUID = TypeConversionUtil.uuidToBytes(uuid);
         var connection = connectionPool.take();
         var registration = getRegistration(uuid);
 
@@ -194,5 +207,11 @@ public class DatabaseManager
         }
         connection.free();
         return usernames;
+    }
+
+    private static String hashPassword(String password)
+    {
+        var salt = BCrypt.gensalt();
+        return BCrypt.hashpw(password, salt);
     }
 }
