@@ -67,7 +67,6 @@ public class PlayerJoinQuitListener implements Listener, LoginListener
     @Override
     public void onPlayerLoggedIn(UUID uuid, String username)
     {
-        System.out.println("HELLOEEEEEEE");
         if (applyDarkness)
         {
             var player = Bukkit.getPlayer(uuid);
