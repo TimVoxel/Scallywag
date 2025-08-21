@@ -312,6 +312,53 @@ public class DatabaseRegistrationManager implements RegistrationManager
         });
     }
 
+    @Override
+    public void tryUpdatePassword(UUID uuid, String currentPassword, String newPassword, Consumer<PasswordUpdateResult> callback)
+    {
+        if (!isLoggedIn(uuid))
+        {
+            callback.accept(PasswordUpdateResult.NOT_LOGGED_IN);
+            return;
+        }
+
+        databaseManager.getRegistration(uuid).thenAccept(registration ->
+        {
+            if (registration == null)
+            {
+                Scallywag.logger().severe(uuid + "'s registration was somehow not found even though they are logged in");
+                callback.accept(PasswordUpdateResult.INTERNAL_ERROR);
+                return;
+            }
+
+            var expectedPassword = registration.passwordHash();
+            passwordVerifier.checkAsync(currentPassword, expectedPassword, isCorrectPassword ->
+            {
+                if (isCorrectPassword)
+                {
+                    callback.accept(PasswordUpdateResult.SUCCESSFUL);
+
+                    updatePlayerPassword(uuid, newPassword, updateResult ->
+                    {
+                        switch (updateResult)
+                        {
+                            case SUCCESSFUL -> callback.accept(PasswordUpdateResult.SUCCESSFUL);
+                            case INTERNAL_ERROR -> callback.accept(PasswordUpdateResult.INTERNAL_ERROR);
+                        }
+                    });
+                }
+                else
+                {
+                    callback.accept(PasswordUpdateResult.WRONG_PASSWORD);
+                }
+            });
+        }).exceptionally(exception ->
+        {
+            logException(exception);
+            callback.accept(PasswordUpdateResult.INTERNAL_ERROR);
+            return null;
+        });
+    }
+
     private void updatePlayerPassword(UUID uuid, String newPassword, Consumer<UpdateResult> callback)
     {
         //Do not account for matching values because that would expose the password
@@ -328,6 +375,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
             return null;
         });
     }
+
 
     @Override
     public List<String> registeredUsernames()

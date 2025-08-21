@@ -1,6 +1,7 @@
 package me.timpixel;
 
 import me.timpixel.commands.LoginCommand;
+import me.timpixel.commands.PasswordCommand;
 import me.timpixel.commands.RegisterCommand;
 import me.timpixel.commands.RegistrationCommand;
 import me.timpixel.database.DatabaseConnectionInfo;
@@ -62,10 +63,12 @@ public class Scallywag extends JavaPlugin
         registrationManager = RegistrationManager.database(this, databaseManager, automaticallyLogInUponRegistration);
 
         var allowPlayerRegistration = config.getBoolean("allowPlayerRegistration");
+        var allowPlayerPasswordChanging = config.getBoolean("allowPlayerPasswordChanging");
 
         registerCommand("register", new RegisterCommand(registrationManager, allowPlayerRegistration));
         registerCommand("login", new LoginCommand(registrationManager));
         registerCommand("registration", new RegistrationCommand(registrationManager));
+        registerCommand("password", new PasswordCommand(registrationManager, allowPlayerPasswordChanging));
 
         Integer timeOutTime = null;
         var timeOutTimeRaw = config.getInt("timeOutSeconds");
@@ -97,6 +100,7 @@ public class Scallywag extends JavaPlugin
         config.addDefault("applyDarknessToUnauthorisedPlayers", true);
         config.addDefault("autoLogInUponRegistration", false);
         config.addDefault("allowPlayerRegistration", true);
+        config.addDefault("allowPlayerPasswordChanging", true);
         config.addDefault("timeOutSeconds", -1);
         config.options().copyDefaults(true);
         saveConfig();

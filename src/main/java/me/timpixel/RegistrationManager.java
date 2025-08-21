@@ -33,6 +33,8 @@ public interface RegistrationManager
      <T> void updateRegistrationProperty(UUID uuid, RegistrationVariableProperty<T> property, T value, Consumer<UpdateResult> callback);
      <T> void updateRegistrationProperty(String username, RegistrationVariableProperty<T> property, T value, Consumer<UpdateResult> callback);
 
+     void tryUpdatePassword(UUID uuid, String currentPassword, String newPassword, Consumer<PasswordUpdateResult> callback);
+
      List<String> registeredUsernames();
 }
 

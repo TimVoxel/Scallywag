@@ -22,7 +22,10 @@ public class LoginCommand implements TabExecutor
     }
 
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args)
+    public boolean onCommand(@NotNull CommandSender sender,
+                             @NotNull Command command,
+                             @NotNull String label,
+                             @NotNull String @NotNull [] args)
     {
         if (!(sender instanceof Player player))
         {

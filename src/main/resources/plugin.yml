@@ -18,3 +18,6 @@ commands:
     usage: /<command> <username>
     permission: scallywag.admin
     description: manages registrations
+  password:
+    usage: /<command> <currentPassword> <newPassword>
+    description: allows a registered player to change their password

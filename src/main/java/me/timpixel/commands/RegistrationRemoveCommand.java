@@ -52,7 +52,7 @@ public class RegistrationRemoveCommand implements SubCommand
                             CommandLogger.error(sender, "Unable to remove registration due to an internal error");
                     case NOT_FOUND ->
                             CommandLogger.error(sender, "Unable to find the registration with uuid " + stringUUID);
-                } ;
+                }
             });
         }
         catch (IllegalArgumentException exception)
