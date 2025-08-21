@@ -42,25 +42,37 @@ public class RegistrationRemoveCommand implements SubCommand
         {
             uuid = UUID.fromString(stringUUID);
 
-            return switch (root.getRegistrationManager().tryRemoveRegistration(uuid))
+            root.getRegistrationManager().tryRemoveRegistration(uuid, registrationRemovalResult ->
             {
-                case SUCCESSFUL -> CommandLogger.info(sender, "Successfully removed registration of player with uuid " + stringUUID);
-                case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to remove registration due to an internal error");
-                case NOT_FOUND -> CommandLogger.error(sender, "Unable to find the registration with uuid " + stringUUID);
-            };
-
+                switch (registrationRemovalResult)
+                {
+                    case SUCCESSFUL ->
+                            CommandLogger.info(sender, "Successfully removed registration of player with uuid " + stringUUID);
+                    case INTERNAL_ERROR ->
+                            CommandLogger.error(sender, "Unable to remove registration due to an internal error");
+                    case NOT_FOUND ->
+                            CommandLogger.error(sender, "Unable to find the registration with uuid " + stringUUID);
+                } ;
+            });
         }
         catch (IllegalArgumentException exception)
         {
             var username = args[0];
 
-            return switch (root.getRegistrationManager().tryRemoveRegistration(username))
+            root.getRegistrationManager().tryRemoveRegistration(username, registrationRemovalResult ->
             {
-                case SUCCESSFUL -> CommandLogger.info(sender, "Successfully removed registration of player with username " + username);
-                case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to remove registration due to an internal error");
-                case NOT_FOUND -> CommandLogger.error(sender, "Unable to find the registration of player with username \"" + username + "\"");
-            };
+                switch (registrationRemovalResult)
+                {
+                    case SUCCESSFUL ->
+                            CommandLogger.info(sender, "Successfully removed registration of player with username " + username);
+                    case INTERNAL_ERROR ->
+                            CommandLogger.error(sender, "Unable to remove registration due to an internal error");
+                    case NOT_FOUND ->
+                            CommandLogger.error(sender, "Unable to find the registration of player with username \"" + username + "\"");
+                }
+            });
         }
+        return true;
     }
 
     @Override

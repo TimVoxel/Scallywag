@@ -15,10 +15,12 @@ import java.util.List;
 public class RegisterCommand implements TabExecutor
 {
     private final RegistrationManager registrationManager;
+    private final boolean allowPlayerRegistration;
 
-    public RegisterCommand(RegistrationManager registrationManager)
+    public RegisterCommand(RegistrationManager registrationManager, boolean allowPlayerRegistration)
     {
         this.registrationManager = registrationManager;
+        this.allowPlayerRegistration = allowPlayerRegistration;
     }
 
     @Override
@@ -29,19 +31,28 @@ public class RegisterCommand implements TabExecutor
             return CommandLogger.error(sender, "This command can only be used by players");
         }
 
+        if (!allowPlayerRegistration)
+        {
+            return CommandLogger.error(sender, "Players are not allowed to register on this server. If you are wanted on the server, you were most likely already registered by the administration");
+        }
+
         if (args.length == 0)
         {
             return CommandLogger.error(sender, "Specify a password");
         }
 
         var password = args[0];
-
-        return switch (registrationManager.tryRegister(player.getUniqueId(), player.getName(), password))
+        registrationManager.tryRegister(player.getUniqueId(), player.getName(), password, result ->
         {
-            case SUCCESSFUL -> CommandLogger.info(sender, "Registration successful!");
-            case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
-            case ALREADY_REGISTERED -> CommandLogger.warning(sender, "You are already registered! Use /login to login instead");
-        };
+            switch (result)
+            {
+                case SUCCESSFUL -> CommandLogger.info(sender, "Registration successful!");
+                case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
+                case ALREADY_REGISTERED -> CommandLogger.warning(sender, "You are already registered! Use /login to login instead");
+            }
+        });
+
+        return true;
     }
 
     @Override

@@ -36,14 +36,19 @@ public class LoginCommand implements TabExecutor
 
         var password = args[0];
 
-        return switch (registrationManager.tryLogIn(player.getUniqueId(), player.getName(), password))
+        registrationManager.tryLogIn(player.getUniqueId(), player.getName(), password, loginResult ->
         {
-            case SUCCESSFUL -> CommandLogger.info(sender, "Successfully logged in!");
-            case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
-            case ALREADY_LOGGED_IN -> CommandLogger.warning(sender, "You are already logged in!");
-            case NOT_REGISTERED -> CommandLogger.error(sender, "You are not registered. Use /register to register with a password, then try again");
-            case WRONG_PASSWORD -> CommandLogger.error(sender, "Wrong password");
-        };
+           switch (loginResult)
+           {
+               case SUCCESSFUL -> CommandLogger.info(sender, "Successfully logged in!");
+               case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
+               case ALREADY_LOGGED_IN -> CommandLogger.warning(sender, "You are already logged in!");
+               case NOT_REGISTERED ->
+                       CommandLogger.error(sender, "You are not registered. Use /register to register with a password, then try again");
+               case WRONG_PASSWORD -> CommandLogger.error(sender, "Wrong password");
+           }
+        });
+        return true;
     }
 
     @Override

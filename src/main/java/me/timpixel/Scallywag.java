@@ -59,15 +59,26 @@ public class Scallywag extends JavaPlugin
         }
 
         var automaticallyLogInUponRegistration = config.getBoolean("automaticallyLogInUponRegistration");
-        registrationManager = RegistrationManager.database(databaseManager, automaticallyLogInUponRegistration);
+        registrationManager = RegistrationManager.database(this, databaseManager, automaticallyLogInUponRegistration);
 
-        registerCommand("register", new RegisterCommand(registrationManager));
+        var allowPlayerRegistration = config.getBoolean("allowPlayerRegistration");
+
+        registerCommand("register", new RegisterCommand(registrationManager, allowPlayerRegistration));
         registerCommand("login", new LoginCommand(registrationManager));
         registerCommand("registration", new RegistrationCommand(registrationManager));
 
+        Integer timeOutTime = null;
+        var timeOutTimeRaw = config.getInt("timeOutSeconds");
+
+        if (timeOutTimeRaw != -1)
+        {
+            timeOutTime = timeOutTimeRaw;
+        }
+
         registerEvents(config.getBoolean("freezeUnauthorisedPlayers"),
                 config.getBoolean("keepQuittersLoggedIn"),
-                config.getBoolean("applyDarknessToUnauthorisedPlayers"));
+                config.getBoolean("applyDarknessToUnauthorisedPlayers"),
+                timeOutTime);
 
         instance = this;
         logger.info("Scallywag authentication plugin enabled successfully");
@@ -80,10 +91,13 @@ public class Scallywag extends JavaPlugin
                 "jdbc:mysql://localhost/scallywag",
                 "user",
                 "password"));
+
         config.addDefault("freezeUnauthorisedPlayers", true);
         config.addDefault("keepQuittersLoggedIn", true);
         config.addDefault("applyDarknessToUnauthorisedPlayers", true);
         config.addDefault("autoLogInUponRegistration", false);
+        config.addDefault("allowPlayerRegistration", true);
+        config.addDefault("timeOutSeconds", -1);
         config.options().copyDefaults(true);
         saveConfig();
         return config;
@@ -91,7 +105,8 @@ public class Scallywag extends JavaPlugin
 
     private void registerEvents(boolean shouldFreezeNonLoggedIn,
                                 boolean keepQuittersLoggedIn,
-                                boolean applyDarknessToUnauthorisedPlayers)
+                                boolean applyDarknessToUnauthorisedPlayers,
+                                Integer timeOutSeconds)
     {
         var pluginManager = getServer().getPluginManager();
 
@@ -103,7 +118,9 @@ public class Scallywag extends JavaPlugin
 
         var playerJoinListener = new PlayerJoinQuitListener(registrationManager,
                 keepQuittersLoggedIn,
-                applyDarknessToUnauthorisedPlayers);
+                applyDarknessToUnauthorisedPlayers,
+                timeOutSeconds,
+                this);
 
         pluginManager.registerEvents(playerJoinListener, this);
         registrationManager.addListener(playerJoinListener);

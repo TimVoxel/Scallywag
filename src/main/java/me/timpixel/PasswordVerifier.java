@@ -2,9 +2,11 @@ package me.timpixel;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 public class PasswordVerifier
 {
@@ -16,9 +18,9 @@ public class PasswordVerifier
         executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
     }
 
-    public Future<Boolean> verify(String expected, String actual)
+    public void checkAsync(String expected, String actual, Consumer<Boolean> callback)
     {
-        return executorService.submit(() -> BCrypt.checkpw(expected, actual));
+        CompletableFuture.supplyAsync(() -> BCrypt.checkpw(expected, actual)).thenAccept(callback);
     }
 
     public void shutdown()

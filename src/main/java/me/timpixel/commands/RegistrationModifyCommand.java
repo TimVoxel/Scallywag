@@ -59,26 +59,41 @@ public class RegistrationModifyCommand implements SubCommand
         {
             uuid = UUID.fromString(stringUUID);
 
-            return switch (root.getRegistrationManager().updateRegistrationProperty(uuid, property, value))
+            root.getRegistrationManager().updateRegistrationProperty(uuid, property, value, updateResult ->
             {
-                case SUCCESSFUL -> CommandLogger.info(sender, "Successfully changed " + uuid +" registration " + property.name() + " to " + value);
-                case REGISTRATION_NOT_FOUND -> CommandLogger.error(sender, "Unable to find the registration with uuid " + stringUUID);
-                case VALUE_MATCHES -> CommandLogger.warning(sender, "Nothing changed, the property " + property.name() + " already has that value");
-                case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to modify registration due to an internal error");
-            };
+                switch (updateResult)
+                {
+                    case SUCCESSFUL ->
+                            CommandLogger.info(sender, "Successfully changed " + uuid + " registration " + property.name() + " to " + value);
+                    case REGISTRATION_NOT_FOUND ->
+                            CommandLogger.error(sender, "Unable to find the registration with uuid " + stringUUID);
+                    case VALUE_MATCHES ->
+                            CommandLogger.warning(sender, "Nothing changed, the property " + property.name() + " already has that value");
+                    case INTERNAL_ERROR ->
+                            CommandLogger.error(sender, "Unable to modify registration due to an internal error");
+                }
+            });
         }
         catch (IllegalArgumentException exception)
         {
             var username = args[0];
 
-            return switch (root.getRegistrationManager().updateRegistrationProperty(username, property, value))
+            root.getRegistrationManager().updateRegistrationProperty(username, property, value, updateResult ->
             {
-                case SUCCESSFUL -> CommandLogger.info(sender, "Successfully changed " + username + " registration " + property.name() + " to " + value);
-                case REGISTRATION_NOT_FOUND -> CommandLogger.error(sender, "Unable to find the registration with username " + username);
-                case VALUE_MATCHES -> CommandLogger.warning(sender, "Nothing changed, the property " + property.name() + " already has that value");
-                case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to modify registration due to an internal error");
-            };
+                switch (updateResult)
+                {
+                    case SUCCESSFUL ->
+                            CommandLogger.info(sender, "Successfully changed " + username + " registration " + property.name() + " to " + value);
+                    case REGISTRATION_NOT_FOUND ->
+                            CommandLogger.error(sender, "Unable to find the registration with username " + username);
+                    case VALUE_MATCHES ->
+                            CommandLogger.warning(sender, "Nothing changed, the property " + property.name() + " already has that value");
+                    case INTERNAL_ERROR ->
+                            CommandLogger.error(sender, "Unable to modify registration due to an internal error");
+                }
+            });
         }
+        return true;
     }
 
     @Override

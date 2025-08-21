@@ -51,12 +51,20 @@ public class RegistrationAddCommand implements SubCommand
         var username = args[1];
         var password = args[2];
 
-        return switch (root.getRegistrationManager().tryRegister(uuid, username, password))
+        root.getRegistrationManager().tryRegister(uuid, username, password, result ->
         {
-            case SUCCESSFUL -> CommandLogger.info(sender, "Successfully registered player \"" + username + "\", uuid: " + stringUUID);
-            case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to add registration due to an internal error");
-            case ALREADY_REGISTERED -> CommandLogger.warning(sender, "Player with uuid " + stringUUID + " is already registered. Use /registration modify if you wish to modify their registration");
-        };
+            switch (result)
+            {
+                case SUCCESSFUL ->
+                        CommandLogger.info(sender, "Successfully registered player \"" + username + "\", uuid: " + stringUUID);
+                case INTERNAL_ERROR ->
+                        CommandLogger.error(sender, "Unable to add registration due to an internal error");
+                case ALREADY_REGISTERED ->
+                        CommandLogger.warning(sender, "Player with uuid " + stringUUID + " is already registered. Use /registration modify if you wish to modify their registration");
+            }
+        });
+
+        return true;
     }
 
     @Override
