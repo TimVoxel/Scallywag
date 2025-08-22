@@ -2,7 +2,7 @@ package me.timpixel.commands;
 
 import me.timpixel.CommandLogger;
 import me.timpixel.RegistrationManager;
-import me.timpixel.Scallywag;
+import me.timpixel.ScallywagPlugin;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -35,7 +35,7 @@ public class PasswordCommand implements TabExecutor
             return CommandLogger.error(sender, "This command can only be used by players");
         }
 
-        if (!allowPlayerPasswordChanging && !Scallywag.hasAdminPermission(sender))
+        if (!allowPlayerPasswordChanging && !ScallywagPlugin.hasAdminPermission(sender))
         {
             return CommandLogger.error(sender, "Players are not allowed to change their passwords on this server");
         }

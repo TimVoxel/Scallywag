@@ -2,7 +2,7 @@ package me.timpixel.commands;
 
 import me.timpixel.CommandLogger;
 import me.timpixel.RegistrationManager;
-import me.timpixel.Scallywag;
+import me.timpixel.ScallywagPlugin;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -32,7 +32,7 @@ public class RegisterCommand implements TabExecutor
             return CommandLogger.error(sender, "This command can only be used by players");
         }
 
-        if (!allowPlayerRegistration && !Scallywag.hasAdminPermission(sender))
+        if (!allowPlayerRegistration && !ScallywagPlugin.hasAdminPermission(sender))
         {
             return CommandLogger.error(sender, "Players are not allowed to register on this server. If you are wanted on the server, you were most likely already registered by the administration");
         }

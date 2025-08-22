@@ -2,7 +2,7 @@ package me.timpixel.commands;
 
 import me.timpixel.CommandLogger;
 import me.timpixel.RegistrationManager;
-import me.timpixel.Scallywag;
+import me.timpixel.ScallywagPlugin;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +29,7 @@ public class RegistrationCommand extends RootCommand
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, String[] args)
     {
-        if (!Scallywag.hasAdminPermission(sender))
+        if (!ScallywagPlugin.hasAdminPermission(sender))
         {
             return CommandLogger.error(sender, "You have no permission to use this command");
         }

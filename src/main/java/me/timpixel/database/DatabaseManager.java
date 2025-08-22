@@ -1,5 +1,6 @@
 package me.timpixel.database;
 
+import me.timpixel.DatabaseConnectionInfo;
 import me.timpixel.PlayerRegistration;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,5 +1,6 @@
 package me.timpixel.database;
 
+import me.timpixel.DatabaseConnectionInfo;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;

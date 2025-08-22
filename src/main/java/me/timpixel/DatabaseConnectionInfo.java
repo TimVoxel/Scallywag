@@ -1,6 +1,5 @@
-package me.timpixel.database;
+package me.timpixel;
 
-import me.timpixel.Scallywag;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +32,7 @@ public record DatabaseConnectionInfo(String url, String user, String password) i
         }
         else
         {
-            Scallywag.logger().warning("Did not find \"url\" while deserializing database connection info");
+            ScallywagPlugin.logger().warning("Did not find \"url\" while deserializing database connection info");
         }
 
         if (map.containsKey("user"))
@@ -42,7 +41,7 @@ public record DatabaseConnectionInfo(String url, String user, String password) i
         }
         else
         {
-            Scallywag.logger().warning("Did not find \"user\" while deserializing database connection info");
+            ScallywagPlugin.logger().warning("Did not find \"user\" while deserializing database connection info");
         }
 
         if (map.containsKey("password"))
@@ -51,7 +50,7 @@ public record DatabaseConnectionInfo(String url, String user, String password) i
         }
         else
         {
-            Scallywag.logger().warning("Did not find \"password\" while deserializing database connection info");
+            ScallywagPlugin.logger().warning("Did not find \"password\" while deserializing database connection info");
         }
 
         return new DatabaseConnectionInfo(url, user, password);

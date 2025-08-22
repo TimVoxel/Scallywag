@@ -75,7 +75,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
             databaseManager.tryRegisterPlayer(uuid, username, password).thenAccept(result ->
             {
                 registeredUsernames.add(username);
-                Scallywag.logger().info("Added new registration of player \"" + username + "\", uuid: " + uuid);
+                ScallywagPlugin.logger().info("Added new registration of player \"" + username + "\", uuid: " + uuid);
 
                 if (automaticallyLogInUponRegistration)
                 {
@@ -148,7 +148,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
             updatePlayerUsername(uuid, storedUsername, username, null);
         }
 
-        Scallywag.logger().info("Player \"" + username + "\" successfully logged in (uuid: " + uuid + ")");
+        ScallywagPlugin.logger().info("Player \"" + username + "\" successfully logged in (uuid: " + uuid + ")");
 
         Bukkit.getScheduler().runTask(plugin, () ->
         {
@@ -212,7 +212,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
                 tryLogOut(uuid, deletedRegistration.username());
             }
 
-            Scallywag.logger().info("Deleted registration of " + username + ", uuid: " + uuid);
+            ScallywagPlugin.logger().info("Deleted registration of " + username + ", uuid: " + uuid);
             return RegistrationRemovalResult.SUCCESSFUL;
         }
         else
@@ -273,7 +273,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
         {
             if (property != RegistrationVariableProperty.PASSWORD)
             {
-                Scallywag.logger().severe("Unexpected registration variable property: " + property.name());
+                ScallywagPlugin.logger().severe("Unexpected registration variable property: " + property.name());
                 callback.accept(UpdateResult.INTERNAL_ERROR);
                 return;
             }
@@ -296,7 +296,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
 
         databaseManager.updatePlayerUsername(uuid, newUsername).thenAccept(voidResult ->
         {
-            Scallywag.logger().info("Updated username of player " + uuid + " to: " + newUsername);
+            ScallywagPlugin.logger().info("Updated username of player " + uuid + " to: " + newUsername);
             if (callback != null)
             {
                 callback.accept(UpdateResult.SUCCESSFUL);
@@ -325,7 +325,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
         {
             if (registration == null)
             {
-                Scallywag.logger().severe(uuid + "'s registration was somehow not found even though they are logged in");
+                ScallywagPlugin.logger().severe(uuid + "'s registration was somehow not found even though they are logged in");
                 callback.accept(PasswordUpdateResult.INTERNAL_ERROR);
                 return;
             }
@@ -365,7 +365,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
 
         databaseManager.updatePlayerPassword(uuid, newPassword).thenAccept(voidResult ->
         {
-            Scallywag.logger().info("Updated password of player " + uuid);
+            ScallywagPlugin.logger().info("Updated password of player " + uuid);
             callback.accept(UpdateResult.SUCCESSFUL);
 
         }).exceptionally(exception ->
@@ -397,6 +397,6 @@ public class DatabaseRegistrationManager implements RegistrationManager
 
     private void logException(Throwable exception)
     {
-        Scallywag.logger().log(Level.SEVERE, "An exception occurred while performing registration operations", exception);
+        ScallywagPlugin.logger().log(Level.SEVERE, "An exception occurred while performing registration operations", exception);
     }
 }
