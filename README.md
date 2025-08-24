@@ -104,4 +104,14 @@ public class ListenerExample implements Listener {
                     .decorate(TextDecoration.BOLD));
         }
     }
+
+    @EventHandler
+    public void onPlayerBreaksBlock(EntityMountEvent event) {
+
+        // Cancel the event if the mounter is not logged in
+
+        if (event.getEntity() instanceof Player player && !Scallywag.isLoggedIn(player)) {
+            event.setCancelled(true);
+        }
+    }
 }
