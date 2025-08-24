@@ -1,6 +1,7 @@
 package me.timpixel.scallywag;
 
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -35,8 +36,8 @@ public interface Scallywag
      *
      * @param validator the validator. The function should take in the password and return true if the password is strong enough, false otherwise
      */
-    static void setPasswordValidator(@NotNull Function<String, Boolean> validator)
+    static void setPasswordValidator(@NotNull JavaPlugin setter, @NotNull Function<String, Boolean> validator)
     {
-        ScallywagPlugin.registrationManager().setPasswordValidator(validator);
+        ScallywagPlugin.registrationManager().setPasswordValidator(setter, validator);
     }
 }

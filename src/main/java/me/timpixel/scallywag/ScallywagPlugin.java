@@ -83,6 +83,9 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
                 config.getBoolean("applyDarknessToUnauthorisedPlayers"),
                 timeOutTime);
 
+        var enableDefaultCommandFeedback = config.getBoolean("enableDefaultCommandFeedback");
+        CommandLogger.setEnableDefaultCommandFeedback(enableDefaultCommandFeedback);
+
         instance = this;
         logger.info("Scallywag authentication plugin enabled successfully");
     }
@@ -102,6 +105,7 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
         config.addDefault("allowPlayerRegistration", true);
         config.addDefault("allowPlayerPasswordChanging", true);
         config.addDefault("timeOutSeconds", -1);
+        config.addDefault("enableDefaultCommandFeedback", true);
         config.options().copyDefaults(true);
         saveConfig();
         return config;

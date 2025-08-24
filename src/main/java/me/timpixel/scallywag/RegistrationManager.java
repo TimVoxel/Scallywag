@@ -36,6 +36,6 @@ public interface RegistrationManager
 
      List<String> registeredUsernames();
 
-     void setPasswordValidator(@NotNull Function<String, Boolean> validator);
+     void setPasswordValidator(@NotNull JavaPlugin setter, @NotNull Function<String, Boolean> validator);
 }
 

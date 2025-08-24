@@ -411,8 +411,9 @@ public class DatabaseRegistrationManager implements RegistrationManager
     }
 
     @Override
-    public void setPasswordValidator(@NotNull Function<String, Boolean> validator)
+    public void setPasswordValidator(@NotNull JavaPlugin setter, @NotNull Function<String, Boolean> validator)
     {
         passwordManager.setValidator(validator);
+        ScallywagPlugin.logger().info("Plugin " + setter.getName() + " set the password validator");
     }
 }
