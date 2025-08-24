@@ -23,6 +23,15 @@ tasks.withType<Jar> {
     destinationDirectory.set(File("${projectDir.parentFile}/Test Server/plugins"))
 }
 
+tasks.register<Copy>("copyJar") {
+    from(tasks.jar)
+    into("C://Development/Paper/APITester/libs")
+}
+
+tasks.jar {
+    finalizedBy("copyJar")
+}
+
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 }
