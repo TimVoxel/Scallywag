@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "me.timpixel"
-version = "1.0-SNAPSHOT"
+version = "1.0.1-SNAPSHOT"
 project.version = version
 
 repositories {
@@ -16,7 +16,7 @@ repositories {
 dependencies {
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("org.apache.logging.log4j:log4j-core:3.0.0-beta3")
-    compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
 }
 
 tasks.withType<Jar> {
