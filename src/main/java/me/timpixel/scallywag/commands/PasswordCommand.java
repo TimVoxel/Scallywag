@@ -52,7 +52,7 @@ public class PasswordCommand implements TabExecutor
         {
             switch (passwordUpdateResult)
             {
-                case SUCCESSFUL -> CommandLogger.info(sender, "Successfully logged in!");
+                case SUCCESSFUL -> CommandLogger.info(sender, "Password changed successfully!");
                 case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
                 case NOT_LOGGED_IN -> CommandLogger.error(sender, "You are not logged in. Please log in and try again");
                 case WRONG_PASSWORD -> CommandLogger.error(sender, "Current password does not match");

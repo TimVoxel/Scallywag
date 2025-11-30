@@ -96,6 +96,11 @@ public class PlayerJoinQuitListener implements Listener
 
     private void processNonLoggedIn(Player player)
     {
+        if (registrationManager.isLoggedIn(player))
+        {
+            return;
+        }
+
         if (applyDarkness)
         {
             player.addPotionEffect(DARKNESS_EFFECT);

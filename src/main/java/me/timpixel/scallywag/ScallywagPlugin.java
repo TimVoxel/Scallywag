@@ -131,7 +131,6 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
                 this);
 
         pluginManager.registerEvents(playerJoinListener, this);
-        //registrationManager.addListener(playerJoinListener);
     }
 
     private void registerCommand(String name, TabExecutor executor)
