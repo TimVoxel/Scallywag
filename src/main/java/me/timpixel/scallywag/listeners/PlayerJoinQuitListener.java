@@ -53,10 +53,14 @@ public class PlayerJoinQuitListener implements Listener
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event)
     {
+        var player = event.getPlayer();
+        var uuid = player.getUniqueId();
+
+        cancelTimeout(uuid);
+
         if (!keepQuittersLoggedIn)
         {
-            var player = event.getPlayer();
-            registrationManager.tryLogOut(player.getUniqueId(), player.getName());
+            registrationManager.tryLogOut(uuid, player.getName());
         }
     }
 
@@ -73,13 +77,18 @@ public class PlayerJoinQuitListener implements Listener
             }
 
             var uuid = player.getUniqueId();
-            var timeOut = timeOuts.get(uuid);
+            cancelTimeout(uuid);
+        }
+    }
 
-            if (timeOut != null)
-            {
-                timeOut.cancel();
-                timeOuts.remove(uuid);
-            }
+    private void cancelTimeout(UUID uuid)
+    {
+        var timeOut = timeOuts.get(uuid);
+
+        if (timeOut != null)
+        {
+            timeOut.cancel();
+            timeOuts.remove(uuid);
         }
     }
 
@@ -113,6 +122,13 @@ public class PlayerJoinQuitListener implements Listener
     {
         if (timeOutSeconds != null)
         {
+            var current = timeOuts.get(uuid);
+
+            if (current != null)
+            {
+                current.cancel();
+            }
+
             var runnable = new BukkitRunnable()
             {
                 @Override
