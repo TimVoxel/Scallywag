@@ -4,18 +4,28 @@ import io.papermc.paper.event.player.PlayerPickBlockEvent;
 import io.papermc.paper.event.player.PlayerPickEntityEvent;
 import io.papermc.paper.event.player.PlayerPickItemEvent;
 import me.timpixel.scallywag.RegistrationManager;
+import me.timpixel.scallywag.ScallywagLogInEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerToggleFlightEvent;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class UnauthorisedPlayerListener implements Listener
 {
     private final RegistrationManager registrationManager;
+    private final Map<UUID, Boolean> originalAllowFlightValue = new HashMap<>();
 
     public UnauthorisedPlayerListener(RegistrationManager registrationManager)
     {
@@ -23,43 +33,88 @@ public class UnauthorisedPlayerListener implements Listener
     }
 
     @EventHandler
-    public void onPlayerMoved(PlayerMoveEvent event)
+    private void onPlayerJoin(PlayerJoinEvent event)
+    {
+        var player = event.getPlayer();
+
+        if (!registrationManager.isLoggedIn(player))
+        {
+            originalAllowFlightValue.put(player.getUniqueId(), player.getAllowFlight());
+            player.setAllowFlight(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onPlayerQuit(PlayerQuitEvent event)
+    {
+        if (!registrationManager.isLoggedIn(event.getPlayer()))
+        {
+            resetAllowFlight(event.getPlayer());
+        }
+    }
+
+    @EventHandler
+    private void onPlayerLoggedIn(ScallywagLogInEvent event)
+    {
+        var player = event.getPlayer();
+
+        if (player != null)
+        {
+            resetAllowFlight(player);
+        }
+    }
+
+    private void resetAllowFlight(Player player)
+    {
+        var value = originalAllowFlightValue.remove(player.getUniqueId());
+
+        if (value != null)
+        {
+            player.setAllowFlight(value);
+        }
+    }
+
+    @EventHandler
+    private void onPlayerMoved(PlayerMoveEvent event)
     {
         cancelIfUnauthorised(event.getPlayer(), event);
     }
 
     @EventHandler
-    public void onPlayerBrokeBlock(BlockBreakEvent event)
+    private void onPlayerToggleFlightEvent(PlayerToggleFlightEvent event) { cancelIfUnauthorised(event.getPlayer(), event); }
+
+    @EventHandler
+    private void onPlayerBrokeBlock(BlockBreakEvent event)
     {
         cancelIfUnauthorised(event.getPlayer(), event);
     }
 
     @EventHandler
-    public void onPlayerPlaceBlock(BlockPlaceEvent event)
+    private void onPlayerPlaceBlock(BlockPlaceEvent event)
     {
         cancelIfUnauthorised(event.getPlayer(), event);
     }
 
     @EventHandler
-    public void onPlayerPickedItem(PlayerPickItemEvent event)
+    private void onPlayerPickedItem(PlayerPickItemEvent event)
     {
         cancelIfUnauthorised(event.getPlayer(), event);
     }
 
     @EventHandler
-    public void onPlayerPickedBlock(PlayerPickBlockEvent event)
+    private void onPlayerPickedBlock(PlayerPickBlockEvent event)
     {
         cancelIfUnauthorised(event.getPlayer(), event);
     }
 
     @EventHandler
-    public void onPlayerPickedEntity(PlayerPickEntityEvent event)
+    private void onPlayerPickedEntity(PlayerPickEntityEvent event)
     {
         cancelIfUnauthorised(event.getPlayer(), event);
     }
 
     @EventHandler
-    public void onPlayerOpenInventory(InventoryOpenEvent event)
+    private void onPlayerOpenInventory(InventoryOpenEvent event)
     {
         if (event.getPlayer() instanceof Player player)
         {

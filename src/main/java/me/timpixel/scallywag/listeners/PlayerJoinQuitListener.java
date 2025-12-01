@@ -45,13 +45,13 @@ public class PlayerJoinQuitListener implements Listener
     }
 
     @EventHandler
-    public void onPlayerJoined(PlayerJoinEvent event)
+    private void onPlayerJoined(PlayerJoinEvent event)
     {
         processNonLoggedIn(event.getPlayer());
     }
 
     @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event)
+    private void onPlayerQuit(PlayerQuitEvent event)
     {
         var player = event.getPlayer();
         var uuid = player.getUniqueId();
@@ -65,7 +65,7 @@ public class PlayerJoinQuitListener implements Listener
     }
 
     @EventHandler
-    public void onPlayerLoggedIn(ScallywagLogInEvent event)
+    private void onPlayerLoggedIn(ScallywagLogInEvent event)
     {
         var player = event.getPlayer();
 
@@ -93,7 +93,7 @@ public class PlayerJoinQuitListener implements Listener
     }
 
     @EventHandler
-    public void onPlayerLoggedOut(ScallywagLogOutEvent event)
+    private void onPlayerLoggedOut(ScallywagLogOutEvent event)
     {
         var player = event.getPlayer();
 
