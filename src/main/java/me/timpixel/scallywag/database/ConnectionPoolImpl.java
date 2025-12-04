@@ -38,6 +38,11 @@ public class ConnectionPoolImpl implements ConnectionPool
             {
                 if (connection.isFree())
                 {
+                    if (!connection.isValid())
+                    {
+                        connection.rebind(ConnectionPool.createConnection(connectionInfo));
+                    }
+
                     return connection.take();
                 }
             }

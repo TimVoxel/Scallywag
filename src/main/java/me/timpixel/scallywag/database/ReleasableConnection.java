@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class ReleasableConnection
 {
-    private final Connection connection;
+    private Connection connection;
     private boolean isFree;
 
     public ReleasableConnection(Connection connection)
@@ -33,8 +33,20 @@ public class ReleasableConnection
         isFree = true;
     }
 
+    public void rebind(Connection newConnection) throws SQLException
+    {
+        close();
+        connection = newConnection;
+        free();
+    }
+
     public void close() throws SQLException
     {
         connection.close();
+    }
+
+    public boolean isValid() throws SQLException
+    {
+        return connection.isValid(1);
     }
 }

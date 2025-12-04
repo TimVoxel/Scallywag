@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "me.timpixel"
-version = "1.0.2-SNAPSHOT"
+version = "1.0.4-SNAPSHOT"
 project.version = version
 
 repositories {
