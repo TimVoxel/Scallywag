@@ -3,8 +3,10 @@ package me.timpixel.scallywag.listeners;
 import io.papermc.paper.event.player.PlayerPickBlockEvent;
 import io.papermc.paper.event.player.PlayerPickEntityEvent;
 import io.papermc.paper.event.player.PlayerPickItemEvent;
+import io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent;
 import me.timpixel.scallywag.RegistrationManager;
 import me.timpixel.scallywag.ScallywagLogInEvent;
+import me.timpixel.scallywag.ScallywagPlugin;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -12,11 +14,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerToggleFlightEvent;
+import org.bukkit.event.player.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,9 +27,12 @@ public class UnauthorisedPlayerListener implements Listener
     private final RegistrationManager registrationManager;
     private final Map<UUID, Boolean> originalAllowFlightValue = new HashMap<>();
 
-    public UnauthorisedPlayerListener(RegistrationManager registrationManager)
+    private final boolean doSetUnauthorisedInvulnerable;
+
+    public UnauthorisedPlayerListener(RegistrationManager registrationManager, boolean doSetUnauthorisedInvulnerable)
     {
         this.registrationManager = registrationManager;
+        this.doSetUnauthorisedInvulnerable = doSetUnauthorisedInvulnerable;
     }
 
     @EventHandler
@@ -49,7 +52,7 @@ public class UnauthorisedPlayerListener implements Listener
     {
         if (!registrationManager.isLoggedIn(event.getPlayer()))
         {
-            resetAllowFlight(event.getPlayer());
+            resetChangedProperties(event.getPlayer());
         }
     }
 
@@ -60,17 +63,17 @@ public class UnauthorisedPlayerListener implements Listener
 
         if (player != null)
         {
-            resetAllowFlight(player);
+            resetChangedProperties(player);
         }
     }
 
-    private void resetAllowFlight(Player player)
+    private void resetChangedProperties(Player player)
     {
-        var value = originalAllowFlightValue.remove(player.getUniqueId());
+        var allowFlight = originalAllowFlightValue.remove(player.getUniqueId());
 
-        if (value != null)
+        if (allowFlight != null)
         {
-            player.setAllowFlight(value);
+            player.setAllowFlight(allowFlight);
         }
     }
 
@@ -114,11 +117,43 @@ public class UnauthorisedPlayerListener implements Listener
     }
 
     @EventHandler
+    private void onEntityDamage(EntityDamageEvent event)
+    {
+        if (!doSetUnauthorisedInvulnerable)
+        {
+            return;
+        }
+
+        if (event.getEntity() instanceof Player player)
+        {
+            cancelIfUnauthorised(player, event);
+        }
+    }
+
+    @EventHandler
     private void onPlayerOpenInventory(InventoryOpenEvent event)
     {
         if (event.getPlayer() instanceof Player player)
         {
             cancelIfUnauthorised(player, event);
+        }
+    }
+
+    @EventHandler
+    private void onCommandPreprocess(PlayerCommandPreprocessEvent event)
+    {
+        if (!ScallywagPlugin.isAllowedUnauthorizedCommand(event.getMessage()))
+        {
+            cancelIfUnauthorised(event.getPlayer(), event);
+        }
+    }
+
+    @EventHandler
+    private void onCommandPreprocess(PlayerSignCommandPreprocessEvent event)
+    {
+        if (!ScallywagPlugin.isAllowedUnauthorizedCommand(event.getMessage()))
+        {
+            cancelIfUnauthorised(event.getPlayer(), event);
         }
     }
 

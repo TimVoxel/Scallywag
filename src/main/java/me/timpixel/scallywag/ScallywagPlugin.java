@@ -1,9 +1,6 @@
 package me.timpixel.scallywag;
 
-import me.timpixel.scallywag.commands.LoginCommand;
-import me.timpixel.scallywag.commands.PasswordCommand;
-import me.timpixel.scallywag.commands.RegisterCommand;
-import me.timpixel.scallywag.commands.RegistrationCommand;
+import me.timpixel.scallywag.commands.*;
 import me.timpixel.scallywag.database.DatabaseManager;
 import me.timpixel.scallywag.listeners.PlayerJoinQuitListener;
 import me.timpixel.scallywag.listeners.UnauthorisedPlayerListener;
@@ -81,6 +78,7 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
         registerEvents(config.getBoolean("freezeUnauthorisedPlayers"),
                 config.getBoolean("keepQuittersLoggedIn"),
                 config.getBoolean("applyDarknessToUnauthorisedPlayers"),
+                config.getBoolean("doSetUnauthorisedInvulnerable"),
                 timeOutTime);
 
         var enableDefaultCommandFeedback = config.getBoolean("enableDefaultCommandFeedback");
@@ -106,6 +104,7 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
         config.addDefault("allowPlayerPasswordChanging", true);
         config.addDefault("timeOutSeconds", -1);
         config.addDefault("enableDefaultCommandFeedback", true);
+        config.addDefault("doSetUnauthorisedInvulnerable", true);
         config.options().copyDefaults(true);
         saveConfig();
         return config;
@@ -114,13 +113,14 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
     private void registerEvents(boolean shouldFreezeNonLoggedIn,
                                 boolean keepQuittersLoggedIn,
                                 boolean applyDarknessToUnauthorisedPlayers,
+                                boolean doSetUnauthorisedInvulnerable,
                                 Integer timeOutSeconds)
     {
         var pluginManager = getServer().getPluginManager();
 
         if (shouldFreezeNonLoggedIn)
         {
-            var unauthorisedPlayerListener = new UnauthorisedPlayerListener(registrationManager);
+            var unauthorisedPlayerListener = new UnauthorisedPlayerListener(registrationManager, doSetUnauthorisedInvulnerable);
             pluginManager.registerEvents(unauthorisedPlayerListener, this);
         }
 
@@ -173,7 +173,7 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
     }
 
     @ApiStatus.Internal
-    static Logger logger()
+    public static Logger logger()
     {
         return instance.logger;
     }
@@ -188,5 +188,12 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag
     public static boolean hasAdminPermission(CommandSender sender)
     {
         return sender.hasPermission(adminPermission);
+    }
+
+    @ApiStatus.Internal
+    public static boolean isAllowedUnauthorizedCommand(String message)
+    {
+        return message.startsWith("/l ") || message.startsWith("/r ") || message.startsWith("/login ")
+                || message.startsWith("/register ");
     }
 }

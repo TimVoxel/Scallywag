@@ -1,5 +1,5 @@
 name: Scallywag
-version: '1.0.4'
+version: '1.0.5'
 main: me.timpixel.scallywag.ScallywagPlugin
 api-version: '1.21.10'
 permissions:
