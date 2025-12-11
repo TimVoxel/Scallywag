@@ -50,14 +50,15 @@ Before logging in, players must register. Admins can also add registrations manu
 
 The following configuration options are available:
 
-- **`allowPlayerPasswordChanging`**: Allows players to update their passwords using `/password`.
+- **`allowPlayerPasswordChanging`**: Whether to allows players to update their passwords using `/password`.
 - **`allowPlayerRegistration`**: Enables or disables player registration using `/register`.
-- **`applyDarknessToUnauthorisedPlayers`**: Applies an infinite darkness effect to players who are not logged in.
-- **`automaticallyLogInUponRegistration`**: Automatically logs players in after registration using `/register`.
+- **`applyDarknessToUnauthorisedPlayers`**: Whether to apply an infinite darkness effect to players who are not logged in.
+- **`automaticallyLogInUponRegistration`**: Whether to automatically log players in after registration using `/register`.
 - **`databaseConnection`**: Database connection information (see [Setup](#setup)).
-- **`enableDefaultCommandFeedback`**: Enables default messages in chat to communicate operation information.
-- **`freezeUnauthorisedPlayers`**: Freezes non-logged-in players in place, preventing movement and interactions.
-- **`keepQuittersLoggedIn`**: Retains a player’s logged-in status after they quit. If set to true, they won't need to log in again upon rejoining.
+- **`doSetUnauthorisedInvulnerable`**: Whether to cancel all damage to unauthorised players.
+- **`enableDefaultCommandFeedback`**: Whether to enables default messages in chat to communicate operation information.
+- **`freezeUnauthorisedPlayers`**: Whether to freeze non-logged-in players in place, preventing movement and interactions.
+- **`keepQuittersLoggedIn`**: Whether to retain a player’s logged-in status after they quit. If set to true, they won't need to log in again upon rejoining.
 - **`timeOutSeconds`**: Duration (in seconds) until a non-logged-in player is kicked from the server. Set to `-1` to disable this feature.
 
 ## API
