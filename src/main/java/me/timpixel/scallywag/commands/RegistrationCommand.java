@@ -1,19 +1,17 @@
 package me.timpixel.scallywag.commands;
 
-import me.timpixel.scallywag.CommandLogger;
-import me.timpixel.scallywag.RegistrationManager;
-import me.timpixel.scallywag.ScallywagPlugin;
+import me.timpixel.scallywag.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 public class RegistrationCommand extends RootCommand
 {
-    private final RegistrationManager registrationManager;
+    private final RegistrationHolder holder;
 
-    public RegistrationCommand(RegistrationManager registrationManager)
+    public RegistrationCommand(RegistrationHolder holder)
     {
-        this.registrationManager = registrationManager;
+        this.holder = holder;
     }
 
     @Override
@@ -36,8 +34,5 @@ public class RegistrationCommand extends RootCommand
         return super.onCommand(sender, command, s, args);
     }
 
-    public RegistrationManager getRegistrationManager()
-    {
-        return registrationManager;
-    }
+    public RegistrationHolder holder() { return holder; }
 }

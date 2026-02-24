@@ -10,25 +10,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
+import org.mindrot.jbcrypt.*;
 
-import org.mindrot.jbcrypt.BCrypt;
-
-public class DatabaseManager
+public class NativeDatabaseConnector
 {
     private final ExecutorService executorService;
     private final ConnectionPool connectionPool;
 
-    private DatabaseManager(ConnectionPool connectionPool)
+    private NativeDatabaseConnector(ConnectionPool connectionPool)
     {
         this.executorService = Executors.newFixedThreadPool(10);
         this.connectionPool = connectionPool;
     }
 
-    public static DatabaseManager tryCreate(DatabaseConnectionInfo connectionInfo) throws SQLException
+    public static NativeDatabaseConnector tryCreate(DatabaseConnectionInfo connectionInfo) throws SQLException
     {
         var initialSize = 1;
         var pool = ConnectionPool.create(connectionInfo, initialSize);
-        return new DatabaseManager(pool);
+        return new NativeDatabaseConnector(pool);
     }
 
     public void init() throws SQLException

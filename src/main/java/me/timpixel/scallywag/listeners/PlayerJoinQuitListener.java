@@ -1,6 +1,6 @@
 package me.timpixel.scallywag.listeners;
 
-import me.timpixel.scallywag.RegistrationManager;
+import me.timpixel.scallywag.LoginManager;
 import me.timpixel.scallywag.ScallywagLogInEvent;
 import me.timpixel.scallywag.ScallywagLogOutEvent;
 import net.kyori.adventure.text.Component;
@@ -24,19 +24,19 @@ public class PlayerJoinQuitListener implements Listener
 
     private final Map<UUID, BukkitRunnable> timeOuts;
 
-    private final RegistrationManager registrationManager;
+    private final LoginManager loginManager;
     private final boolean keepQuittersLoggedIn;
     private final boolean applyDarkness;
     private final Integer timeOutSeconds;
     private final JavaPlugin plugin;
 
-    public PlayerJoinQuitListener(RegistrationManager registrationManager,
+    public PlayerJoinQuitListener(LoginManager loginManager,
                                   boolean keepQuittersLoggedIn,
                                   boolean applyDarkness,
                                   Integer timeOutSeconds,
                                   JavaPlugin plugin)
     {
-        this.registrationManager = registrationManager;
+        this.loginManager = loginManager;
         this.keepQuittersLoggedIn = keepQuittersLoggedIn;
         this.applyDarkness = applyDarkness;
         this.timeOutSeconds = timeOutSeconds;
@@ -60,7 +60,7 @@ public class PlayerJoinQuitListener implements Listener
 
         if (!keepQuittersLoggedIn)
         {
-            registrationManager.tryLogOut(uuid, player.getName());
+            loginManager.tryLogOut(uuid, player.getName());
         }
     }
 
@@ -105,7 +105,7 @@ public class PlayerJoinQuitListener implements Listener
 
     private void processNonLoggedIn(Player player)
     {
-        if (registrationManager.isLoggedIn(player))
+        if (loginManager.isLoggedIn(player))
         {
             return;
         }

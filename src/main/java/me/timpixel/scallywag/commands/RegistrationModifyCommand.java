@@ -1,7 +1,9 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.CommandLogger;
+import me.timpixel.scallywag.RegistrationManager;
 import me.timpixel.scallywag.RegistrationVariableProperty;
+import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -55,11 +57,21 @@ public class RegistrationModifyCommand implements SubCommand
         var stringUUID = args[0];
         var value = args[2];
         UUID uuid;
+
+        RegistrationManager manager;
+        try
+        {
+            manager = root.holder().registrationManager();
+        }
+        catch (ScallywagNoAuthenticationException exception)
+        {
+            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
+        }
         try
         {
             uuid = UUID.fromString(stringUUID);
 
-            root.getRegistrationManager().updateRegistrationProperty(uuid, property, value, updateResult ->
+            manager.updateRegistrationProperty(uuid, property, value, updateResult ->
             {
                 switch (updateResult)
                 {
@@ -79,7 +91,7 @@ public class RegistrationModifyCommand implements SubCommand
         {
             var username = args[0];
 
-            root.getRegistrationManager().updateRegistrationProperty(username, property, value, updateResult ->
+            manager.updateRegistrationProperty(username, property, value, updateResult ->
             {
                 switch (updateResult)
                 {
@@ -106,7 +118,14 @@ public class RegistrationModifyCommand implements SubCommand
     {
         if (args.length == 1)
         {
-            return root.getRegistrationManager().registeredUsernames();
+            try
+            {
+                return root.holder().registrationManager().registeredUsernames();
+            }
+            catch (ScallywagNoAuthenticationException exception)
+            {
+                return Collections.emptyList();
+            }
         }
         else if (args.length == 2)
         {
