@@ -147,32 +147,21 @@ public class NativeDatabaseAuthenticationManager implements AuthenticationManage
 
     private synchronized void logIn(UUID uuid, String storedUsername, String username)
     {
-        loggedInPlayers.add(uuid);
+        logIn(uuid, username);
 
         if (!storedUsername.equals(username))
         {
             updatePlayerUsername(uuid, storedUsername, username, null);
         }
+        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(new ScallywagLogInEvent(uuid)));
+    }
 
+    @Override
+    public synchronized void logIn(UUID uuid, String username)
+    {
+        loggedInPlayers.add(uuid);
         ScallywagPlugin.logger().info("Player \"" + username + "\" successfully logged in (uuid: " + uuid + ")");
         Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(new ScallywagLogInEvent(uuid)));
-        /*{
-            var player = Bukkit.getPlayer(uuid);
-
-            if (player == null || !player.isOnline())
-            {
-                return;
-            }
-
-            for (var listener : listeners)
-            {
-                if (listener != null)
-                {
-                    listener.onPlayerLoggedIn(player);
-                }
-            }
-
-        });*/
     }
 
     @Override

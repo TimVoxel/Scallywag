@@ -2,7 +2,7 @@ package me.timpixel.scallywag;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mindrot.jbcrypt.BCrypt;
+import org.mindrot.jbcrypt.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
