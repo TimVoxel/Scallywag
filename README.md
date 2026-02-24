@@ -1,6 +1,7 @@
 # Scallywag
 
-Scallywag is a simple database-backed authentication plugin for Minecraft servers. It allows players to register and log in, making it useful for both offline mode servers and those requiring additional security measures (e.g., private event servers). The plugin encrypts player passwords and operates asynchronously, preventing server blocking during operations. Basic timeouts and password validation are also implemented.
+Scallywag is a simple database-backed authentication plugin for Minecraft servers. It allows players to register and log in, making it useful for both offline mode servers and those requiring additional security measures (e.g., private event servers). <br>
+The plugin supports both external and native database authentication types. The native authentication encrypts player passwords and operates asynchronously, preventing server blocking during operations. Basic timeouts and password validation are also implemented. External authentication can be used to use preexisting databases or APIs.
 
 ## Table of Contents
 
@@ -10,11 +11,13 @@ Scallywag is a simple database-backed authentication plugin for Minecraft server
 - [Configuration](#configuration)
 - [Notes](#notes)
 - [API](#api)
-- [Example](#example)
+- [API Example](#example)
 
 ## Setup
 
-To get started, set up the database connection in the configuration file (`config.yml` located in `plugins/Scallywag`. Search for the `databaseConnection` section and fill out the fields:
+First, choose the authentication source. If you wish to use native database authentication, make sure that you have access to a mysql server (if you are using something like pterodactyl, it usually comes bundled with the software). If you wish to use external authentication, you would need to either find a plugin that implements it or write one yourself.
+
+For native authentication: to get started, set up the database connection in the configuration file (`config.yml` located in `plugins/Scallywag`. Search for the `databaseConnection` section and fill out the fields:
 
 - **`url`**: The JDBC connection URL (should look like `jdbc:mysql://host:port/databaseName`). The database must be MySQL.
 - **`user`**: The database username.
@@ -24,7 +27,8 @@ To get started, set up the database connection in the configuration file (`confi
 
 ## Usage
 
-Before logging in, players must register. Admins can also add registrations manually using the command `/registration add`. Upon registration, players specify a password and can log in with it.
+Before logging in, players must register. Admins can also add registrations manually using the command `/registration add`. Upon registration, players specify a password and can log in with it.<br>
+Player registration can be disabled in the configuration, in which case all registration will need to be performed by admins (good for private servers or event servers).
 
 ### Player Commands
 
@@ -45,11 +49,13 @@ Before logging in, players must register. Admins can also add registrations manu
 - Only tested with a MySQL database.
 - By default, there is no notification prompting players to log in upon joining the server. You can implement this notification using the API or another plugin.
 - The logged-in player list resets when the server restarts.
+- If external authentication is used, Scallywag is only responsible for keeping players in a limbo state. If external authentication is insecure, Scallywag will not assist with the problem. Only use external authentication if you know what you are doing.
 
 ## Configuration
 
 The following configuration options are available:
 
+- **`authenticationSource`**: The authentication source to use. Use NATIVE_DATABASE for native and EXTERNAL for external.
 - **`allowPlayerPasswordChanging`**: Whether to allows players to update their passwords using `/password`.
 - **`allowPlayerRegistration`**: Enables or disables player registration using `/register`.
 - **`applyDarknessToUnauthorisedPlayers`**: Whether to apply an infinite darkness effect to players who are not logged in.
@@ -65,9 +71,10 @@ The following configuration options are available:
 
 The plugin includes a simple API. The `Scallywag` interface provides an abstraction for common operations. Synchronous Bukkit events, `ScallywagLogInEvent` and `ScallywagLogOutEvent`, are triggered on the next tick after a player logs in or logs out, respectively.
 
+
 Refer to the Javadocs for more information.
 
-## Example
+### Example
 
 ```java
 public class APITester extends JavaPlugin {
