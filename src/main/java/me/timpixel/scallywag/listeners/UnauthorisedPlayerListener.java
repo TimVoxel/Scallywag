@@ -4,7 +4,7 @@ import io.papermc.paper.event.player.PlayerPickBlockEvent;
 import io.papermc.paper.event.player.PlayerPickEntityEvent;
 import io.papermc.paper.event.player.PlayerPickItemEvent;
 import io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent;
-import me.timpixel.scallywag.RegistrationManager;
+import me.timpixel.scallywag.LoginManager;
 import me.timpixel.scallywag.ScallywagLogInEvent;
 import me.timpixel.scallywag.ScallywagPlugin;
 import org.bukkit.entity.Player;
@@ -24,14 +24,14 @@ import java.util.UUID;
 
 public class UnauthorisedPlayerListener implements Listener
 {
-    private final RegistrationManager registrationManager;
+    private final LoginManager loginManager;
     private final Map<UUID, Boolean> originalAllowFlightValue = new HashMap<>();
 
     private final boolean doSetUnauthorisedInvulnerable;
 
-    public UnauthorisedPlayerListener(RegistrationManager registrationManager, boolean doSetUnauthorisedInvulnerable)
+    public UnauthorisedPlayerListener(LoginManager loginManager, boolean doSetUnauthorisedInvulnerable)
     {
-        this.registrationManager = registrationManager;
+        this.loginManager = loginManager;
         this.doSetUnauthorisedInvulnerable = doSetUnauthorisedInvulnerable;
     }
 
@@ -40,7 +40,7 @@ public class UnauthorisedPlayerListener implements Listener
     {
         var player = event.getPlayer();
 
-        if (!registrationManager.isLoggedIn(player))
+        if (!loginManager.isLoggedIn(player))
         {
             originalAllowFlightValue.put(player.getUniqueId(), player.getAllowFlight());
             player.setAllowFlight(true);
@@ -50,7 +50,7 @@ public class UnauthorisedPlayerListener implements Listener
     @EventHandler(priority = EventPriority.HIGH)
     private void onPlayerQuit(PlayerQuitEvent event)
     {
-        if (!registrationManager.isLoggedIn(event.getPlayer()))
+        if (!loginManager.isLoggedIn(event.getPlayer()))
         {
             resetChangedProperties(event.getPlayer());
         }
@@ -159,7 +159,7 @@ public class UnauthorisedPlayerListener implements Listener
 
     private void cancelIfUnauthorised(Player player, Cancellable event)
     {
-        if (!registrationManager.isLoggedIn(player))
+        if (!loginManager.isLoggedIn(player))
         {
             event.setCancelled(true);
         }

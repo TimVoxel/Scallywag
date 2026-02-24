@@ -1,6 +1,8 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.CommandLogger;
+import me.timpixel.scallywag.RegistrationManager;
+import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +53,16 @@ public class RegistrationAddCommand implements SubCommand
         var username = args[1];
         var password = args[2];
 
-        root.getRegistrationManager().tryRegister(uuid, username, password, result ->
+        RegistrationManager manager;
+        try
+        {
+            manager = root.holder().registrationManager();
+        }
+        catch (ScallywagNoAuthenticationException exception)
+        {
+            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
+        }
+        manager.tryRegister(uuid, username, password, result ->
         {
             switch (result)
             {

@@ -1,7 +1,9 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.CommandLogger;
-import me.timpixel.scallywag.RegistrationManager;
+import me.timpixel.scallywag.LoginHolder;
+import me.timpixel.scallywag.LoginManager;
+import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -14,11 +16,11 @@ import java.util.List;
 
 public class LoginCommand implements TabExecutor
 {
-    private final RegistrationManager registrationManager;
+    private final LoginHolder holder;
 
-    public LoginCommand(RegistrationManager registrationManager)
+    public LoginCommand(LoginHolder holder)
     {
-        this.registrationManager = registrationManager;
+        this.holder = holder;
     }
 
     @Override
@@ -39,7 +41,16 @@ public class LoginCommand implements TabExecutor
 
         var password = args[0];
 
-        registrationManager.tryLogIn(player.getUniqueId(), player.getName(), password, loginResult ->
+        LoginManager manager;
+        try
+        {
+            manager = holder.loginManager();
+        }
+        catch (ScallywagNoAuthenticationException exception)
+        {
+            return CommandLogger.error(sender, "Unable to log in, no login manager is set");
+        }
+        manager.tryLogIn(player.getUniqueId(), player.getName(), password, loginResult ->
         {
            switch (loginResult)
            {

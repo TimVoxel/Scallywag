@@ -1,6 +1,8 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.CommandLogger;
+import me.timpixel.scallywag.RegistrationManager;
+import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -38,11 +40,20 @@ public class RegistrationRemoveCommand implements SubCommand
 
         var stringUUID = args[0];
         UUID uuid;
+        RegistrationManager manager;
+        try
+        {
+            manager = root.holder().registrationManager();
+        }
+        catch (ScallywagNoAuthenticationException exception)
+        {
+            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
+        }
         try
         {
             uuid = UUID.fromString(stringUUID);
 
-            root.getRegistrationManager().tryRemoveRegistration(uuid, registrationRemovalResult ->
+            manager.tryRemoveRegistration(uuid, registrationRemovalResult ->
             {
                 switch (registrationRemovalResult)
                 {
@@ -59,7 +70,7 @@ public class RegistrationRemoveCommand implements SubCommand
         {
             var username = args[0];
 
-            root.getRegistrationManager().tryRemoveRegistration(username, registrationRemovalResult ->
+            manager.tryRemoveRegistration(username, registrationRemovalResult ->
             {
                 switch (registrationRemovalResult)
                 {
@@ -81,8 +92,17 @@ public class RegistrationRemoveCommand implements SubCommand
                                                 @NotNull String label,
                                                 @NotNull String @NotNull [] args)
     {
-        return args.length == 1
-                ? root.getRegistrationManager().registeredUsernames()
-                : Collections.emptyList();
+        if (args.length == 1)
+        {
+            try
+            {
+                return root.holder().registrationManager().registeredUsernames();
+            }
+            catch (Exception exception)
+            {
+                return Collections.emptyList();
+            }
+        }
+        return Collections.emptyList();
     }
 }

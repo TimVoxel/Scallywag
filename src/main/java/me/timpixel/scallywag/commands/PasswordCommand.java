@@ -1,8 +1,7 @@
 package me.timpixel.scallywag.commands;
 
-import me.timpixel.scallywag.CommandLogger;
-import me.timpixel.scallywag.RegistrationManager;
-import me.timpixel.scallywag.ScallywagPlugin;
+import me.timpixel.scallywag.*;
+import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -15,12 +14,12 @@ import java.util.List;
 
 public class PasswordCommand implements TabExecutor
 {
-    private final RegistrationManager registrationManager;
+    private final RegistrationHolder holder;
     private final boolean allowPlayerPasswordChanging;
 
-    public PasswordCommand(RegistrationManager registrationManager, boolean allowPlayerPasswordChanging)
+    public PasswordCommand(RegistrationHolder holder, boolean allowPlayerPasswordChanging)
     {
-        this.registrationManager = registrationManager;
+        this.holder = holder;
         this.allowPlayerPasswordChanging = allowPlayerPasswordChanging;
     }
 
@@ -48,7 +47,16 @@ public class PasswordCommand implements TabExecutor
         var currentPassword = args[0];
         var newPassword = args[1];
 
-        registrationManager.tryUpdatePassword(player.getUniqueId(), currentPassword, newPassword, passwordUpdateResult ->
+        RegistrationManager manager;
+        try
+        {
+            manager = holder.registrationManager();
+        }
+        catch (ScallywagNoAuthenticationException exception)
+        {
+            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
+        }
+        manager.tryUpdatePassword(player.getUniqueId(), currentPassword, newPassword, passwordUpdateResult ->
         {
             switch (passwordUpdateResult)
             {

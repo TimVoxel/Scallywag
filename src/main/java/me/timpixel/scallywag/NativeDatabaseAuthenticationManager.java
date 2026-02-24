@@ -1,6 +1,6 @@
 package me.timpixel.scallywag;
 
-import me.timpixel.scallywag.database.DatabaseManager;
+import me.timpixel.scallywag.database.NativeDatabaseConnector;
 import me.timpixel.scallywag.results.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -12,20 +12,20 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 
-public class DatabaseRegistrationManager implements RegistrationManager
+public class NativeDatabaseAuthenticationManager implements AuthenticationManager
 {
     private final PasswordManager passwordManager;
     private final Set<UUID> loggedInPlayers;
     private final List<String> registeredUsernames;
 
     private final JavaPlugin plugin;
-    private final DatabaseManager databaseManager;
+    private final NativeDatabaseConnector connector;
     private final boolean automaticallyLogInUponRegistration;
 
-    public DatabaseRegistrationManager(JavaPlugin plugin, DatabaseManager databaseManager, boolean automaticallyLogInUponRegistration)
+    public NativeDatabaseAuthenticationManager(JavaPlugin plugin, NativeDatabaseConnector connector, boolean automaticallyLogInUponRegistration)
     {
         this.plugin = plugin;
-        this.databaseManager = databaseManager;
+        this.connector = connector;
         this.automaticallyLogInUponRegistration = automaticallyLogInUponRegistration;
         this.loggedInPlayers = new HashSet<>();
 
@@ -33,7 +33,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
 
         try
         {
-            var registeredInDatabase = databaseManager.getRegisteredUsernames();
+            var registeredInDatabase = connector.getRegisteredUsernames();
             registeredUsernames.addAll(registeredInDatabase.get());
         }
         catch (Exception exception)
@@ -64,7 +64,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
     @Override
     public void tryRegister(UUID uuid, String username, String password, Consumer<RegistrationResult> callback)
     {
-        databaseManager.getRegistration(uuid).thenAccept(registration ->
+        connector.getRegistration(uuid).thenAccept(registration ->
         {
             if (registration != null)
             {
@@ -78,7 +78,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
                 return;
             }
 
-            databaseManager.tryRegisterPlayer(uuid, username, password).thenAccept(result ->
+            connector.tryRegisterPlayer(uuid, username, password).thenAccept(result ->
             {
                 registeredUsernames.add(username);
                 ScallywagPlugin.logger().info("Added new registration of player \"" + username + "\", uuid: " + uuid);
@@ -113,7 +113,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
             return;
         }
 
-        databaseManager.getRegistration(uuid).thenAccept(registration ->
+        connector.getRegistration(uuid).thenAccept(registration ->
         {
             if (registration == null)
             {
@@ -147,32 +147,21 @@ public class DatabaseRegistrationManager implements RegistrationManager
 
     private synchronized void logIn(UUID uuid, String storedUsername, String username)
     {
-        loggedInPlayers.add(uuid);
+        logIn(uuid, username);
 
         if (!storedUsername.equals(username))
         {
             updatePlayerUsername(uuid, storedUsername, username, null);
         }
+        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(new ScallywagLogInEvent(uuid)));
+    }
 
+    @Override
+    public synchronized void logIn(UUID uuid, String username)
+    {
+        loggedInPlayers.add(uuid);
         ScallywagPlugin.logger().info("Player \"" + username + "\" successfully logged in (uuid: " + uuid + ")");
         Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(new ScallywagLogInEvent(uuid)));
-        /*{
-            var player = Bukkit.getPlayer(uuid);
-
-            if (player == null || !player.isOnline())
-            {
-                return;
-            }
-
-            for (var listener : listeners)
-            {
-                if (listener != null)
-                {
-                    listener.onPlayerLoggedIn(player);
-                }
-            }
-
-        });*/
     }
 
     @Override
@@ -187,7 +176,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
     @Override
     public void tryRemoveRegistration(UUID uuid, Consumer<RegistrationRemovalResult> callback)
     {
-        databaseManager.deleteRegistrationWithUUID(uuid).thenAccept(registration ->
+        connector.deleteRegistrationWithUUID(uuid).thenAccept(registration ->
                 callback.accept(processDeletedRegistration(registration))).exceptionally(exception ->
         {
             logException(exception);
@@ -199,7 +188,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
     @Override
     public void tryRemoveRegistration(String username, Consumer<RegistrationRemovalResult> callback)
     {
-        databaseManager.deleteRegistrationsWithUsername(username, 1).thenAccept(registration ->
+        connector.deleteRegistrationsWithUsername(username, 1).thenAccept(registration ->
                 callback.accept(processDeletedRegistration(registration))).exceptionally(exception ->
         {
             logException(exception);
@@ -237,7 +226,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
                                                T value,
                                                Consumer<UpdateResult> callback)
     {
-        databaseManager.getRegistration(uuid).thenAccept(registration ->
+        connector.getRegistration(uuid).thenAccept(registration ->
             updateRegistrationProperty(registration, property, value, callback)).exceptionally(exception ->
         {
             logException(exception);
@@ -252,7 +241,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
                                                T value,
                                                Consumer<UpdateResult> callback)
     {
-        databaseManager.getRegistration(username).thenAccept(registration ->
+        connector.getRegistration(username).thenAccept(registration ->
                 updateRegistrationProperty(registration, property, value, callback)).exceptionally(exception ->
         {
             logException(exception);
@@ -262,9 +251,9 @@ public class DatabaseRegistrationManager implements RegistrationManager
     }
 
     private <T> void updateRegistrationProperty(@Nullable PlayerRegistration registration,
-                                                        RegistrationVariableProperty<T> property,
-                                                        T value,
-                                                        Consumer<UpdateResult> callback)
+                                                RegistrationVariableProperty<T> property,
+                                                T value,
+                                                Consumer<UpdateResult> callback)
     {
         if (registration == null)
         {
@@ -304,7 +293,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
         registeredUsernames.remove(storedName);
         registeredUsernames.add(newUsername);
 
-        databaseManager.updatePlayerUsername(uuid, newUsername).thenAccept(voidResult ->
+        connector.updatePlayerUsername(uuid, newUsername).thenAccept(voidResult ->
         {
             ScallywagPlugin.logger().info("Updated username of player " + uuid + " to: " + newUsername);
             if (callback != null)
@@ -331,7 +320,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
             return;
         }
 
-        databaseManager.getRegistration(uuid).thenAccept(registration ->
+        connector.getRegistration(uuid).thenAccept(registration ->
         {
             if (registration == null)
             {
@@ -385,7 +374,7 @@ public class DatabaseRegistrationManager implements RegistrationManager
             return;
         }
 
-        databaseManager.updatePlayerPassword(uuid, newPassword).thenAccept(voidResult ->
+        connector.updatePlayerPassword(uuid, newPassword).thenAccept(voidResult ->
         {
             ScallywagPlugin.logger().info("Updated password of player " + uuid);
             callback.accept(UpdateResult.SUCCESSFUL);

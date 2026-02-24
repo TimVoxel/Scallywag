@@ -1,9 +1,10 @@
 plugins {
     id("java")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "me.timpixel"
-version = "1.0.5-SNAPSHOT"
+version = "1.1.0-SNAPSHOT"
 project.version = version
 
 repositories {
@@ -15,8 +16,13 @@ repositories {
 }
 dependencies {
     implementation("org.mindrot:jbcrypt:0.4")
-    implementation("org.apache.logging.log4j:log4j-core:3.0.0-beta3")
-    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
+    compileOnly("org.apache.logging.log4j:log4j-core:3.0.0-beta3")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("")
+    //relocate("org.mindrot.jbcrypt", "me.timpixel.libs.jbcrypt")
 }
 
 tasks.withType<Jar> {
@@ -24,11 +30,11 @@ tasks.withType<Jar> {
 }
 
 tasks.register<Copy>("copyJar") {
-    from(tasks.jar)
+    from(tasks.shadowJar)
     into("C://Development/Paper/APITester/libs")
 }
 
-tasks.jar {
+tasks.shadowJar {
     finalizedBy("copyJar")
 }
 
