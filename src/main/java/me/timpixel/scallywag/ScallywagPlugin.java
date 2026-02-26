@@ -111,13 +111,15 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
 
         if (config.isFreezeUnauthorisedPlayers())
         {
-            var unauthorisedPlayerListener = new UnauthorisedPlayerListener(loginManager, config.isSetUnauthorisedInvulnerable());
+            var unauthorisedPlayerListener = new UnauthorisedPlayerListener(loginManager,
+                    config.isSetUnauthorisedInvulnerable(),
+                    config.isApplyDarknessToUnauthorisedPlayers(),
+                    config.limboLocation());
             pluginManager.registerEvents(unauthorisedPlayerListener, this);
         }
 
         var playerJoinListener = new PlayerJoinQuitListener(loginManager,
                 config.isKeepQuittersLoggedIn(),
-                config.isApplyDarknessToUnauthorisedPlayers(),
                 timeOutSeconds,
                 this);
 

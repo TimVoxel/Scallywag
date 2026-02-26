@@ -3,6 +3,7 @@ package me.timpixel.scallywag.listeners;
 import me.timpixel.scallywag.LoginManager;
 import me.timpixel.scallywag.ScallywagLogInEvent;
 import me.timpixel.scallywag.ScallywagLogOutEvent;
+import me.timpixel.scallywag.ScallywagUnauthorisedPlayerJoinEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -12,33 +13,26 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
 public class PlayerJoinQuitListener implements Listener
 {
-    private final static PotionEffect DARKNESS_EFFECT = new PotionEffect(PotionEffectType.DARKNESS, Integer.MAX_VALUE, 1, true, false);
-
     private final Map<UUID, BukkitRunnable> timeOuts;
 
     private final LoginManager loginManager;
     private final boolean keepQuittersLoggedIn;
-    private final boolean applyDarkness;
     private final Integer timeOutSeconds;
     private final JavaPlugin plugin;
 
     public PlayerJoinQuitListener(LoginManager loginManager,
                                   boolean keepQuittersLoggedIn,
-                                  boolean applyDarkness,
                                   Integer timeOutSeconds,
                                   JavaPlugin plugin)
     {
         this.loginManager = loginManager;
         this.keepQuittersLoggedIn = keepQuittersLoggedIn;
-        this.applyDarkness = applyDarkness;
         this.timeOutSeconds = timeOutSeconds;
         this.plugin = plugin;
         this.timeOuts = new HashMap<>();
@@ -67,15 +61,10 @@ public class PlayerJoinQuitListener implements Listener
     @EventHandler
     private void onPlayerLoggedIn(ScallywagLogInEvent event)
     {
-        var player = event.getPlayer();
+        var player = Bukkit.getPlayer(event.getUuid());
 
         if (player != null)
         {
-            if (applyDarkness)
-            {
-                player.removePotionEffect(PotionEffectType.DARKNESS);
-            }
-
             var uuid = player.getUniqueId();
             cancelTimeout(uuid);
         }
@@ -95,7 +84,7 @@ public class PlayerJoinQuitListener implements Listener
     @EventHandler
     private void onPlayerLoggedOut(ScallywagLogOutEvent event)
     {
-        var player = event.getPlayer();
+        var player = Bukkit.getPlayer(event.getUuid());
 
         if (player != null)
         {
@@ -105,17 +94,11 @@ public class PlayerJoinQuitListener implements Listener
 
     private void processNonLoggedIn(Player player)
     {
-        if (loginManager.isLoggedIn(player))
+        if (!loginManager.isLoggedIn(player))
         {
-            return;
+            startTimeOutRunnable(player.getUniqueId());
+            Bukkit.getPluginManager().callEvent(new ScallywagUnauthorisedPlayerJoinEvent(player));
         }
-
-        if (applyDarkness)
-        {
-            player.addPotionEffect(DARKNESS_EFFECT);
-        }
-
-        startTimeOutRunnable(player.getUniqueId());
     }
 
     private void startTimeOutRunnable(final UUID uuid)
