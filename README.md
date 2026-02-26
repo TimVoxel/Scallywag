@@ -65,12 +65,15 @@ The following configuration options are available:
 - **`enableDefaultCommandFeedback`**: Whether to enables default messages in chat to communicate operation information.
 - **`freezeUnauthorisedPlayers`**: Whether to freeze non-logged-in players in place, preventing movement and interactions.
 - **`keepQuittersLoggedIn`**: Whether to retain a player’s logged-in status after they quit. If set to true, they won't need to log in again upon rejoining.
+- **`limboLocation`**: The location where unauthorised players are teleported after they join the server (and are brought back from after they log in).
 - **`timeOutSeconds`**: Duration (in seconds) until a non-logged-in player is kicked from the server. Set to `-1` to disable this feature.
-
+- **`useLimboLocation`**: Whether to teleport unauthorised players to the limboLocation when they join the server.
+ 
 ## API
 
-The plugin includes a simple API. The `Scallywag` interface provides an abstraction for common operations. Synchronous Bukkit events, `ScallywagLogInEvent` and `ScallywagLogOutEvent`, are triggered on the next tick after a player logs in or logs out, respectively.
+The plugin includes a simple API. The `Scallywag` interface provides an abstraction for common operations. Synchronous Bukkit events, `ScallywagLogInEvent` and `ScallywagLogOutEvent`, are triggered on the next tick after a player logs in or logs out, respectively. You can also use `ScallywagUnauthorisedPlayerJoinEvent` to manage what happens to unauthorised players when they join your server.<br>
 
+To use external authentication, you must provide your own implementation of the `LoginManager` and/or `RegistrationManager` interfaces depending on the functionality you need. You should then assign them using `Scallywag.setLoginManager(loginManager)` and `Scallywag.setRegistrationManager(registrationManager)` respectivelly. It is important to note that this is only allowed once, so make sure that your plugin list contains only one plugin that provides Scallywag with external authentication.<br>
 
 Refer to the Javadocs for more information.
 
@@ -86,13 +89,22 @@ public class APITester extends JavaPlugin {
     }
 
     private boolean isPasswordValid(String password) {
-        return !password.equals("123456"); // Return true if the password is strong enough, false otherwise
+        return password.contains("$"); // Return true if the password is strong enough, false otherwise
     }
 }
 
 public class ListenerExample implements Listener {
+
     @EventHandler
-    public void onPlayerLoggedIn(ScallywagLogInEvent event) {
+    private void onUnauthorisedPlayerJoined(ScallywagUnauthorisedPlayerJoinEvent event)
+    {
+        var player = event.getPlayer();
+        player.sendMessage("Please log in to authorise on the server");
+        player.setHealth(20.0f);
+    }
+
+    @EventHandler
+    private void onPlayerLoggedIn(ScallywagLogInEvent event) {
         // Show a message to a newly logged-in player
         final var player = event.getPlayer();
         if (player != null) {
@@ -103,7 +115,7 @@ public class ListenerExample implements Listener {
     }
 
     @EventHandler
-    public void onPlayerLoggedOut(ScallywagLogOutEvent event) {
+    private void onPlayerLoggedOut(ScallywagLogOutEvent event) {
         // Show a message to a newly logged-out player
         final var player = event.getPlayer();
         if (player != null) {
@@ -114,7 +126,7 @@ public class ListenerExample implements Listener {
     }
 
     @EventHandler
-    public void onPlayerBreaksBlock(EntityMountEvent event) {
+    private void onPlayerMountsEntity(EntityMountEvent event) {
 
         // Cancel the event if the mounter is not logged in
 
