@@ -1,7 +1,9 @@
 
 package me.timpixel.scallywag;
 
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +46,8 @@ public class ScallywagConfig
         configuration.addDefault("enableDefaultCommandFeedback", true);
         configuration.addDefault("doSetUnauthorisedInvulnerable", true);
         configuration.addDefault("authenticationSource", AuthenticationSource.NATIVE_DATABASE.toString());
+        configuration.addDefault("useLimboLocation", false);
+        configuration.addDefault("limboLocation", new Location(null, 0, 0, 0, 0, 0));
     }
 
     public DatabaseConnectionInfo databaseConnectionInfo()
@@ -107,5 +111,12 @@ public class ScallywagConfig
         {
             return AuthenticationSource.NATIVE_DATABASE;
         }
+    }
+
+    public @Nullable Location limboLocation()
+    {
+        return Boolean.TRUE.equals(configuration.getBoolean("useLimboLocation"))
+            ? configuration.getLocation("limboLocation")
+            : null;
     }
 }

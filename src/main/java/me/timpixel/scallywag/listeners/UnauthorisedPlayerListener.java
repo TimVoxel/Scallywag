@@ -6,7 +6,10 @@ import io.papermc.paper.event.player.PlayerPickItemEvent;
 import io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent;
 import me.timpixel.scallywag.LoginManager;
 import me.timpixel.scallywag.ScallywagLogInEvent;
+import me.timpixel.scallywag.ScallywagUnauthorisedPlayerJoinEvent;
 import me.timpixel.scallywag.ScallywagPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -17,6 +20,9 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,26 +30,47 @@ import java.util.UUID;
 
 public class UnauthorisedPlayerListener implements Listener
 {
+    private record UnauthorisedPlayerInfo(Location location, boolean isAllowFlight)
+    {
+    }
+
+    private final static PotionEffect DARKNESS_EFFECT = new PotionEffect(PotionEffectType.DARKNESS, Integer.MAX_VALUE, 1, true, false);
+
     private final LoginManager loginManager;
-    private final Map<UUID, Boolean> originalAllowFlightValue = new HashMap<>();
+    private final Map<UUID, UnauthorisedPlayerInfo> unauthorisedInfo = new HashMap<>();
 
-    private final boolean doSetUnauthorisedInvulnerable;
+    private final boolean isSetUnauthorisedInvulnerable;
+    private final boolean isApplyDarkness;
+    private final @Nullable Location limboLocation;
 
-    public UnauthorisedPlayerListener(LoginManager loginManager, boolean doSetUnauthorisedInvulnerable)
+    public UnauthorisedPlayerListener(LoginManager loginManager,
+                                      boolean isSetUnauthorisedInvulnerable,
+                                      boolean isApplyDarkness,
+                                      @Nullable Location limboLocation)
     {
         this.loginManager = loginManager;
-        this.doSetUnauthorisedInvulnerable = doSetUnauthorisedInvulnerable;
+        this.isSetUnauthorisedInvulnerable = isSetUnauthorisedInvulnerable;
+        this.isApplyDarkness = isApplyDarkness;
+        this.limboLocation = limboLocation;
     }
 
     @EventHandler
-    private void onPlayerJoin(PlayerJoinEvent event)
+    private void onNonLoggedInPlayerJoin(ScallywagUnauthorisedPlayerJoinEvent event)
     {
         var player = event.getPlayer();
 
-        if (!loginManager.isLoggedIn(player))
+        var location = player.getLocation();
+        var isAllowFlight = player.getAllowFlight();
+        unauthorisedInfo.put(player.getUniqueId(), new UnauthorisedPlayerInfo(location, isAllowFlight));
+
+        player.setAllowFlight(true);
+        if (isApplyDarkness)
         {
-            originalAllowFlightValue.put(player.getUniqueId(), player.getAllowFlight());
-            player.setAllowFlight(true);
+            player.addPotionEffect(DARKNESS_EFFECT);
+        }
+        if (limboLocation != null)
+        {
+            player.teleport(limboLocation);
         }
     }
 
@@ -59,7 +86,7 @@ public class UnauthorisedPlayerListener implements Listener
     @EventHandler
     private void onPlayerLoggedIn(ScallywagLogInEvent event)
     {
-        var player = event.getPlayer();
+        var player = Bukkit.getPlayer(event.getUuid());
 
         if (player != null)
         {
@@ -69,11 +96,16 @@ public class UnauthorisedPlayerListener implements Listener
 
     private void resetChangedProperties(Player player)
     {
-        var allowFlight = originalAllowFlightValue.remove(player.getUniqueId());
+        var info = unauthorisedInfo.get(player.getUniqueId());
 
-        if (allowFlight != null)
+        if (info != null)
         {
-            player.setAllowFlight(allowFlight);
+            player.setAllowFlight(info.isAllowFlight);
+            player.teleport(info.location);
+        }
+        if (isApplyDarkness)
+        {
+            player.removePotionEffect(PotionEffectType.DARKNESS);
         }
     }
 
@@ -119,7 +151,7 @@ public class UnauthorisedPlayerListener implements Listener
     @EventHandler
     private void onEntityDamage(EntityDamageEvent event)
     {
-        if (!doSetUnauthorisedInvulnerable)
+        if (!isSetUnauthorisedInvulnerable)
         {
             return;
         }
