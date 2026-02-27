@@ -1,9 +1,7 @@
 package me.timpixel.scallywag.commands;
 
+import me.timpixel.scallywag.AuthenticationManager;
 import me.timpixel.scallywag.CommandLogger;
-import me.timpixel.scallywag.LoginHolder;
-import me.timpixel.scallywag.LoginManager;
-import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -16,11 +14,11 @@ import java.util.List;
 
 public class LoginCommand implements TabExecutor
 {
-    private final LoginHolder holder;
+    private final AuthenticationManager manager;
 
-    public LoginCommand(LoginHolder holder)
+    public LoginCommand(AuthenticationManager manager)
     {
-        this.holder = holder;
+        this.manager = manager;
     }
 
     @Override
@@ -41,27 +39,16 @@ public class LoginCommand implements TabExecutor
 
         var password = args[0];
 
-        LoginManager manager;
-        try
-        {
-            manager = holder.loginManager();
-        }
-        catch (ScallywagNoAuthenticationException exception)
-        {
-            return CommandLogger.error(sender, "Unable to log in, no login manager is set");
-        }
-        manager.tryLogIn(player.getUniqueId(), player.getName(), password, loginResult ->
-        {
-           switch (loginResult)
-           {
-               case SUCCESSFUL -> CommandLogger.info(sender, "Successfully logged in!");
-               case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
-               case ALREADY_LOGGED_IN -> CommandLogger.warning(sender, "You are already logged in!");
-               case NOT_REGISTERED ->
-                       CommandLogger.error(sender, "You are not registered. Use /register to register with a password, then try again");
-               case WRONG_PASSWORD -> CommandLogger.error(sender, "Wrong password");
-           }
-        });
+        manager.tryLogIn(player.getUniqueId(), player.getName(), password).thenAccept(r -> {
+            switch (r)
+            {
+                case SUCCESSFUL -> CommandLogger.info(sender, "Successfully logged in!");
+                case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
+                case ALREADY_LOGGED_IN -> CommandLogger.warning(sender, "You are already logged in!");
+                case NOT_REGISTERED ->
+                        CommandLogger.error(sender, "You are not registered. Use /register to register with a password, then try again");
+                case WRONG_PASSWORD -> CommandLogger.error(sender, "Wrong password");
+            }});
         return true;
     }
 

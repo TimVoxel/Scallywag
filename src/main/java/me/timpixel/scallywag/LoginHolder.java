@@ -1,5 +1,6 @@
 package me.timpixel.scallywag;
 
+/*
 import me.timpixel.scallywag.exceptions.ScallywagAuthenticationSetException;
 import me.timpixel.scallywag.exceptions.ScallywagNativeSourceException;
 import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
@@ -10,4 +11,4 @@ public interface LoginHolder
     LoginManager loginManager() throws ScallywagNoAuthenticationException;
     void set(LoginManager loginManager) throws ScallywagUninitializedException,
             ScallywagNativeSourceException, ScallywagAuthenticationSetException;
-}
+}*/

@@ -1,8 +1,9 @@
 package me.timpixel.scallywag.results;
 
-public enum RegistrationRemovalResult
+public enum PasswordVerificationResult
 {
     SUCCESSFUL,
     NOT_FOUND,
-    UNSUPPORTED, INTERNAL_ERROR
+    INCORRECT,
+    INTERNAL_ERROR
 }

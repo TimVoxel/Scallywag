@@ -2,14 +2,10 @@ package me.timpixel.scallywag;
 
 import me.timpixel.scallywag.exceptions.ScallywagAuthenticationSetException;
 import me.timpixel.scallywag.exceptions.ScallywagNativeSourceException;
-import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
-import me.timpixel.scallywag.exceptions.ScallywagUninitializedException;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
-import java.util.function.Function;
 
 public interface Scallywag
 {
@@ -19,9 +15,9 @@ public interface Scallywag
      * @param player the Player to check
      * @return true if the player is logged in, false otherwise
      */
-    static boolean isLoggedIn(@NotNull Player player) throws ScallywagNoAuthenticationException
+    static boolean isLoggedIn(@NotNull Player player)
     {
-        return ScallywagPlugin.login().loginManager().isLoggedIn(player.getUniqueId());
+        return ScallywagPlugin.authenticationManager().isLoggedIn(player.getUniqueId());
     }
 
     /**
@@ -30,9 +26,9 @@ public interface Scallywag
      * @param uuid the UUID of the player
      * @return true if the player is logged in, false otherwise
      */
-    static boolean isLoggedIn(@NotNull UUID uuid) throws ScallywagNoAuthenticationException
+    static boolean isLoggedIn(@NotNull UUID uuid)
     {
-        return ScallywagPlugin.login().loginManager().isLoggedIn(uuid);
+        return ScallywagPlugin.authenticationManager().isLoggedIn(uuid);
     }
 
     /**
@@ -40,37 +36,21 @@ public interface Scallywag
      *
      * @param validator the validator. The function should take in the password and return true if the password is strong enough, false otherwise
      */
-    static void setPasswordValidator(@NotNull JavaPlugin setter, @NotNull Function<String, Boolean> validator) throws ScallywagNoAuthenticationException
+    static void setPasswordValidator(@NotNull PasswordValidator validator)
     {
-        ScallywagPlugin.registration().registrationManager().setPasswordValidator(setter, validator);
+        ScallywagPlugin.authenticationManager().setPasswordValidator(validator);
     }
 
     /**
-     * Sets the login manager (the object responsible for login behaviour).
+     * Sets the authentication handler (the object responsible for external authentication).
      *
-     * @param loginManager the login manager.
-     * @throws ScallywagUninitializedException if the method is used before Scallywag is fully initialized
-     * @throws ScallywagNativeSourceException if native authentication is being used
-     * @throws ScallywagAuthenticationSetException if the login manager was already set by a different call
-     */
-    static void setLoginManager(@NotNull LoginManager loginManager) throws ScallywagUninitializedException,
-            ScallywagNativeSourceException, ScallywagAuthenticationSetException
-    {
-        ScallywagPlugin.login().set(loginManager);
-    }
-
-    /**
-     * Sets the registration manager (the object responsible for registration creation, update and deletion).
-     *
-     * @param registrationManager the login manager.
-     * @throws ScallywagUninitializedException     if the method is used before Scallywag is fully initialized
+     * @param authenticationHandler the authentication handler.
      * @throws ScallywagNativeSourceException      if native authentication is being used
-     * @throws ScallywagAuthenticationSetException if the registration manager was already set by a different call
+     * @throws ScallywagAuthenticationSetException if the authentication handler is already set
      */
-    static void setRegistrationManager(@NotNull RegistrationManager registrationManager) throws ScallywagUninitializedException,
-            ScallywagNativeSourceException, ScallywagAuthenticationSetException
+    static void setAuthenticationHandler(@NotNull AuthenticationHandler authenticationHandler) throws ScallywagNativeSourceException, ScallywagAuthenticationSetException
     {
-        ScallywagPlugin.registration().set(registrationManager);
+        ScallywagPlugin.authenticationManager().setAuthenticationHandler(authenticationHandler);
     }
 
 }

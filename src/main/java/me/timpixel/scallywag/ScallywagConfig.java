@@ -48,6 +48,7 @@ public class ScallywagConfig
         configuration.addDefault("authenticationSource", AuthenticationSource.NATIVE_DATABASE.toString());
         configuration.addDefault("useLimboLocation", false);
         configuration.addDefault("limboLocation", new Location(null, 0, 0, 0, 0, 0));
+        configuration.addDefault("threadPoolSize", 2);
     }
 
     public DatabaseConnectionInfo databaseConnectionInfo()
@@ -118,5 +119,10 @@ public class ScallywagConfig
         return Boolean.TRUE.equals(configuration.getBoolean("useLimboLocation"))
             ? configuration.getLocation("limboLocation")
             : null;
+    }
+
+    public int threadPoolSize()
+    {
+        return configuration.getInt("threadPoolSize");
     }
 }

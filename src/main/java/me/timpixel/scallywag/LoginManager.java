@@ -1,5 +1,5 @@
 package me.timpixel.scallywag;
-
+/*
 import me.timpixel.scallywag.results.*;
 import org.bukkit.entity.Player;
 import java.util.*;
@@ -15,4 +15,4 @@ public interface LoginManager
     boolean isLoggedIn(UUID uuid);
     default boolean isLoggedIn(Player player) { return isLoggedIn(player.getUniqueId()); }
 }
-
+*/

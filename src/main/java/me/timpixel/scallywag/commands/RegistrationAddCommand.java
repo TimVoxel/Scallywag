@@ -1,8 +1,6 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.CommandLogger;
-import me.timpixel.scallywag.RegistrationManager;
-import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
 
 public class RegistrationAddCommand implements SubCommand
 {
@@ -53,18 +50,9 @@ public class RegistrationAddCommand implements SubCommand
         var username = args[1];
         var password = args[2];
 
-        RegistrationManager manager;
-        try
+        root.manager().tryRegister(uuid, username, password).thenAccept(r ->
         {
-            manager = root.holder().registrationManager();
-        }
-        catch (ScallywagNoAuthenticationException exception)
-        {
-            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
-        }
-        manager.tryRegister(uuid, username, password, result ->
-        {
-            switch (result)
+            switch (r)
             {
                 case SUCCESSFUL ->
                         CommandLogger.info(sender, "Successfully registered player \"" + username + "\", uuid: " + stringUUID);
@@ -73,6 +61,8 @@ public class RegistrationAddCommand implements SubCommand
                 case ALREADY_REGISTERED ->
                         CommandLogger.warning(sender, "Player with uuid " + stringUUID + " is already registered. Use /registration modify if you wish to modify their registration");
                 case INVALID_PASSWORD -> CommandLogger.error(sender, "The password is too weak");
+                case UNSUPPORTED ->
+                    CommandLogger.error(sender, "The current authentication handler does not allow editing registrations");
             }
         });
 
