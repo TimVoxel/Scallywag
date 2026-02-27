@@ -1,6 +1,6 @@
 package me.timpixel.scallywag.listeners;
 
-import me.timpixel.scallywag.LoginManager;
+import me.timpixel.scallywag.AuthenticationManager;
 import me.timpixel.scallywag.ScallywagLogInEvent;
 import me.timpixel.scallywag.ScallywagLogOutEvent;
 import me.timpixel.scallywag.ScallywagUnauthorisedPlayerJoinEvent;
@@ -21,17 +21,17 @@ public class PlayerJoinQuitListener implements Listener
 {
     private final Map<UUID, BukkitRunnable> timeOuts;
 
-    private final LoginManager loginManager;
+    private final AuthenticationManager authenticationManager;
     private final boolean keepQuittersLoggedIn;
     private final Integer timeOutSeconds;
     private final JavaPlugin plugin;
 
-    public PlayerJoinQuitListener(LoginManager loginManager,
+    public PlayerJoinQuitListener(AuthenticationManager authenticationManager,
                                   boolean keepQuittersLoggedIn,
                                   Integer timeOutSeconds,
                                   JavaPlugin plugin)
     {
-        this.loginManager = loginManager;
+        this.authenticationManager = authenticationManager;
         this.keepQuittersLoggedIn = keepQuittersLoggedIn;
         this.timeOutSeconds = timeOutSeconds;
         this.plugin = plugin;
@@ -54,7 +54,7 @@ public class PlayerJoinQuitListener implements Listener
 
         if (!keepQuittersLoggedIn)
         {
-            loginManager.tryLogOut(uuid, player.getName());
+            authenticationManager.tryLogOut(uuid);
         }
     }
 
@@ -94,7 +94,7 @@ public class PlayerJoinQuitListener implements Listener
 
     private void processNonLoggedIn(Player player)
     {
-        if (!loginManager.isLoggedIn(player))
+        if (!authenticationManager.isLoggedIn(player))
         {
             startTimeOutRunnable(player.getUniqueId());
             Bukkit.getPluginManager().callEvent(new ScallywagUnauthorisedPlayerJoinEvent(player));

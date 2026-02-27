@@ -1,7 +1,6 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.*;
-import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -14,12 +13,12 @@ import java.util.List;
 
 public class PasswordCommand implements TabExecutor
 {
-    private final RegistrationHolder holder;
+    private final AuthenticationManager manager;
     private final boolean allowPlayerPasswordChanging;
 
-    public PasswordCommand(RegistrationHolder holder, boolean allowPlayerPasswordChanging)
+    public PasswordCommand(AuthenticationManager manager, boolean allowPlayerPasswordChanging)
     {
-        this.holder = holder;
+        this.manager = manager;
         this.allowPlayerPasswordChanging = allowPlayerPasswordChanging;
     }
 
@@ -39,32 +38,23 @@ public class PasswordCommand implements TabExecutor
             return CommandLogger.error(sender, "Players are not allowed to change their passwords on this server");
         }
 
-        if (args.length < 2)
+        if (args.length < 1)
         {
-            return CommandLogger.error(sender, "First specify the current password, then the new one");
+            return CommandLogger.error(sender, "Specify the new password");
         }
 
-        var currentPassword = args[0];
-        var newPassword = args[1];
+        var newPassword = args[0];
 
-        RegistrationManager manager;
-        try
+        manager.tryUpdatePassword(player.getUniqueId(), player.getName(), newPassword).thenAccept(r ->
         {
-            manager = holder.registrationManager();
-        }
-        catch (ScallywagNoAuthenticationException exception)
-        {
-            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
-        }
-        manager.tryUpdatePassword(player.getUniqueId(), currentPassword, newPassword, passwordUpdateResult ->
-        {
-            switch (passwordUpdateResult)
+            switch (r)
             {
-                case SUCCESSFUL -> CommandLogger.info(sender, "Password changed successfully!");
-                case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
-                case NOT_LOGGED_IN -> CommandLogger.error(sender, "You are not logged in. Please log in and try again");
-                case WRONG_PASSWORD -> CommandLogger.error(sender, "Current password does not match");
-                case INVALID_PASSWORD -> CommandLogger.error(sender, "The password is too weak");
+                case SUCCESSFUL: CommandLogger.info(sender, "Password changed successfully!"); break;
+                case INTERNAL_ERROR: CommandLogger.error(sender, "Unable to change password due to an internal error"); break;
+                case IDENTICAL:
+                case INVALID: CommandLogger.error(sender, "The password you provided is invalid"); break;
+                case NOT_FOUND: CommandLogger.error(sender, "You are not registered, register with a password first"); break;
+                case UNSUPPORTED: CommandLogger.error(sender, "The current authentication handler does not allow editing registrations"); break;
             }
         });
         return true;

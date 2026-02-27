@@ -3,8 +3,8 @@ package me.timpixel.scallywag.results;
 public enum UpdateResult
 {
     SUCCESSFUL,
-    REGISTRATION_NOT_FOUND,
-    VALUE_MATCHES,
+    NOT_FOUND,
+    IDENTICAL,
     INTERNAL_ERROR,
-    INVALID_PASSWORD
+    UNSUPPORTED, INVALID
 }
