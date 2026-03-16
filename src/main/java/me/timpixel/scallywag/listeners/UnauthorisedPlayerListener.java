@@ -58,7 +58,6 @@ public class UnauthorisedPlayerListener implements Listener
     private void onNonLoggedInPlayerJoin(ScallywagUnauthorisedPlayerJoinEvent event)
     {
         var player = event.getPlayer();
-
         var location = player.getLocation();
         var isAllowFlight = player.getAllowFlight();
         unauthorisedInfo.put(player.getUniqueId(), new UnauthorisedPlayerInfo(location, isAllowFlight));
@@ -97,11 +96,14 @@ public class UnauthorisedPlayerListener implements Listener
     private void resetChangedProperties(Player player)
     {
         var info = unauthorisedInfo.remove(player.getUniqueId());
-
         if (info != null)
         {
             player.setAllowFlight(info.isAllowFlight);
-            player.teleport(info.location);
+
+            if (limboLocation != null)
+            {
+                player.teleport(info.location);
+            }
         }
         if (isApplyDarkness)
         {

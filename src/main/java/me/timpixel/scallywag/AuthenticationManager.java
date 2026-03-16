@@ -36,7 +36,8 @@ public class AuthenticationManager
 
     public void setAuthenticationHandler(AuthenticationHandler authenticationHandler) throws ScallywagAuthenticationSetException, ScallywagNativeSourceException
     {
-        if (authenticationSource != AuthenticationSource.EXTERNAL)
+        if (authenticationSource == AuthenticationSource.NATIVE_DATABASE
+            && !(authenticationHandler instanceof NativeDatabaseAuthenticationHandler))
         {
             throw new ScallywagNativeSourceException();
         }
@@ -83,9 +84,16 @@ public class AuthenticationManager
 
     public synchronized void logIn(UUID uuid, String username)
     {
-        loggedInPlayers.add(uuid);
+        logIn(uuid);
         ScallywagPlugin.logger().info("Player \"" + username + "\" successfully logged in (uuid: " + uuid + ")");
-        Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(new ScallywagLogInEvent(uuid)));
+    }
+
+    public synchronized void logIn(UUID uuid)
+    {
+        if (loggedInPlayers.add(uuid))
+        {
+            Bukkit.getScheduler().runTask(plugin, () -> Bukkit.getPluginManager().callEvent(new ScallywagLogInEvent(uuid)));
+        }
     }
 
     public void tryLogOut(UUID uuid)
@@ -108,7 +116,7 @@ public class AuthenticationManager
 
     public CompletableFuture<RegistrationResult> tryRegister(UUID uuid, String username, String password)
     {
-        if (!passwordValidator.isValid(password))
+        if (passwordValidator != null && !passwordValidator.isValid(password))
         {
             return CompletableFuture.completedFuture(RegistrationResult.INVALID_PASSWORD);
         }
@@ -205,7 +213,7 @@ public class AuthenticationManager
 
     public CompletableFuture<UpdateResult> tryUpdatePassword(UUID uuid, String username, String newPassword)
     {
-        if (!passwordValidator.isValid(newPassword))
+        if (passwordValidator != null && !passwordValidator.isValid(newPassword))
         {
             return CompletableFuture.completedFuture(UpdateResult.INVALID);
         }
