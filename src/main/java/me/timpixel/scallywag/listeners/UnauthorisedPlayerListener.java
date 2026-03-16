@@ -4,7 +4,7 @@ import io.papermc.paper.event.player.PlayerPickBlockEvent;
 import io.papermc.paper.event.player.PlayerPickEntityEvent;
 import io.papermc.paper.event.player.PlayerPickItemEvent;
 import io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent;
-import me.timpixel.scallywag.LoginManager;
+import me.timpixel.scallywag.AuthenticationManager;
 import me.timpixel.scallywag.ScallywagLogInEvent;
 import me.timpixel.scallywag.ScallywagUnauthorisedPlayerJoinEvent;
 import me.timpixel.scallywag.ScallywagPlugin;
@@ -36,19 +36,19 @@ public class UnauthorisedPlayerListener implements Listener
 
     private final static PotionEffect DARKNESS_EFFECT = new PotionEffect(PotionEffectType.DARKNESS, Integer.MAX_VALUE, 1, true, false);
 
-    private final LoginManager loginManager;
+    private final AuthenticationManager authenticationManager;
     private final Map<UUID, UnauthorisedPlayerInfo> unauthorisedInfo = new HashMap<>();
 
     private final boolean isSetUnauthorisedInvulnerable;
     private final boolean isApplyDarkness;
     private final @Nullable Location limboLocation;
 
-    public UnauthorisedPlayerListener(LoginManager loginManager,
+    public UnauthorisedPlayerListener(AuthenticationManager authenticationManager,
                                       boolean isSetUnauthorisedInvulnerable,
                                       boolean isApplyDarkness,
                                       @Nullable Location limboLocation)
     {
-        this.loginManager = loginManager;
+        this.authenticationManager = authenticationManager;
         this.isSetUnauthorisedInvulnerable = isSetUnauthorisedInvulnerable;
         this.isApplyDarkness = isApplyDarkness;
         this.limboLocation = limboLocation;
@@ -58,7 +58,6 @@ public class UnauthorisedPlayerListener implements Listener
     private void onNonLoggedInPlayerJoin(ScallywagUnauthorisedPlayerJoinEvent event)
     {
         var player = event.getPlayer();
-
         var location = player.getLocation();
         var isAllowFlight = player.getAllowFlight();
         unauthorisedInfo.put(player.getUniqueId(), new UnauthorisedPlayerInfo(location, isAllowFlight));
@@ -77,7 +76,7 @@ public class UnauthorisedPlayerListener implements Listener
     @EventHandler(priority = EventPriority.HIGH)
     private void onPlayerQuit(PlayerQuitEvent event)
     {
-        if (!loginManager.isLoggedIn(event.getPlayer()))
+        if (!authenticationManager.isLoggedIn(event.getPlayer()))
         {
             resetChangedProperties(event.getPlayer());
         }
@@ -96,12 +95,15 @@ public class UnauthorisedPlayerListener implements Listener
 
     private void resetChangedProperties(Player player)
     {
-        var info = unauthorisedInfo.get(player.getUniqueId());
-
+        var info = unauthorisedInfo.remove(player.getUniqueId());
         if (info != null)
         {
             player.setAllowFlight(info.isAllowFlight);
-            player.teleport(info.location);
+
+            if (limboLocation != null)
+            {
+                player.teleport(info.location);
+            }
         }
         if (isApplyDarkness)
         {
@@ -191,7 +193,7 @@ public class UnauthorisedPlayerListener implements Listener
 
     private void cancelIfUnauthorised(Player player, Cancellable event)
     {
-        if (!loginManager.isLoggedIn(player))
+        if (!authenticationManager.isLoggedIn(player))
         {
             event.setCancelled(true);
         }

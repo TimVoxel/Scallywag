@@ -1,7 +1,6 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.*;
-import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -14,12 +13,12 @@ import java.util.List;
 
 public class RegisterCommand implements TabExecutor
 {
-    private final RegistrationHolder holder;
+    private final AuthenticationManager manager;
     private final boolean allowPlayerRegistration;
 
-    public RegisterCommand(RegistrationHolder holder, boolean allowPlayerRegistration)
+    public RegisterCommand(AuthenticationManager manager, boolean allowPlayerRegistration)
     {
-        this.holder = holder;
+        this.manager = manager;
         this.allowPlayerRegistration = allowPlayerRegistration;
     }
 
@@ -41,17 +40,8 @@ public class RegisterCommand implements TabExecutor
             return CommandLogger.error(sender, "Specify a password");
         }
 
-        RegistrationManager manager;
-        try
-        {
-            manager = holder.registrationManager();
-        }
-        catch (ScallywagNoAuthenticationException exception)
-        {
-            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
-        }
         var password = args[0];
-        manager.tryRegister(player.getUniqueId(), player.getName(), password, result ->
+        manager.tryRegister(player.getUniqueId(), player.getName(), password).thenAccept(result ->
         {
             switch (result)
             {
@@ -59,9 +49,10 @@ public class RegisterCommand implements TabExecutor
                 case INTERNAL_ERROR -> CommandLogger.error(sender, "Unable to register due to an internal error");
                 case ALREADY_REGISTERED -> CommandLogger.warning(sender, "You are already registered! Use /login to login instead");
                 case INVALID_PASSWORD -> CommandLogger.error(sender, "The password is too weak");
+                case UNSUPPORTED ->
+                    CommandLogger.error(sender, "The current authentication handler does not allow editing registrations");
             }
         });
-
         return true;
     }
 

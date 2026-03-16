@@ -7,21 +7,21 @@ import org.jetbrains.annotations.NotNull;
 
 public class RegistrationCommand extends RootCommand
 {
-    private final RegistrationHolder holder;
+    private final AuthenticationManager manager;
 
-    public RegistrationCommand(RegistrationHolder holder)
+    public RegistrationCommand(AuthenticationManager manager)
     {
-        this.holder = holder;
+        this.manager = manager;
     }
 
     @Override
     protected SubCommand[] getSubCommands()
     {
-        var sub = new SubCommand[3];
-        sub[0] = new RegistrationAddCommand(this);
-        sub[1] = new RegistrationRemoveCommand(this);
-        sub[2] = new RegistrationModifyCommand(this);
-        return sub;
+        return new SubCommand[] {
+            new RegistrationAddCommand(this),
+            new RegistrationRemoveCommand(this),
+            new RegistrationModifyCommand(this)
+        };
     }
 
     @Override
@@ -34,5 +34,5 @@ public class RegistrationCommand extends RootCommand
         return super.onCommand(sender, command, s, args);
     }
 
-    public RegistrationHolder holder() { return holder; }
+    public AuthenticationManager manager() { return manager; }
 }

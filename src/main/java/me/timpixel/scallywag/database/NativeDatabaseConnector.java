@@ -17,17 +17,17 @@ public class NativeDatabaseConnector
     private final ExecutorService executorService;
     private final ConnectionPool connectionPool;
 
-    private NativeDatabaseConnector(ConnectionPool connectionPool)
+    private NativeDatabaseConnector(ExecutorService executorService, ConnectionPool connectionPool)
     {
-        this.executorService = Executors.newFixedThreadPool(10);
+        this.executorService = executorService;
         this.connectionPool = connectionPool;
     }
 
-    public static NativeDatabaseConnector tryCreate(DatabaseConnectionInfo connectionInfo) throws SQLException
+    public static NativeDatabaseConnector tryCreate(DatabaseConnectionInfo connectionInfo, ExecutorService executorService) throws SQLException
     {
         var initialSize = 1;
         var pool = ConnectionPool.create(connectionInfo, initialSize);
-        return new NativeDatabaseConnector(pool);
+        return new NativeDatabaseConnector(executorService, pool);
     }
 
     public void init() throws SQLException
@@ -104,7 +104,7 @@ public class NativeDatabaseConnector
         }, executorService);
     }
 
-    public CompletableFuture<Void> tryRegisterPlayer(UUID uuid, String username, String password)
+    public CompletableFuture<Void> register(UUID uuid, String username, String password)
     {
         return CompletableFuture.runAsync(() ->
         {
@@ -139,7 +139,7 @@ public class NativeDatabaseConnector
         }, executorService);
     }
 
-    public CompletableFuture<Void> updatePlayerUsername(UUID uuid, String username)
+    public CompletableFuture<Void> tryUpdateRegistration(String oldUsername, String newUsername, String newPassword)
     {
         return CompletableFuture.runAsync(() ->
         {
@@ -147,13 +147,13 @@ public class NativeDatabaseConnector
 
             try
             {
-                var byteUUID = TypeConversionUtil.uuidToBytes(uuid);
                 connection = connectionPool.take();
 
-                try (var statement = connection.prepareStatement("UPDATE scallywag_players SET username = ? WHERE uuid = ?"))
+                try (var statement = connection.prepareStatement("UPDATE scallywag_players SET username = ?, password = ? WHERE username = ?"))
                 {
-                    statement.setString(1, username);
-                    statement.setBytes(2, byteUUID);
+                    statement.setString(1, newUsername);
+                    statement.setString(2, hashPassword(newPassword));
+                    statement.setString(3, oldUsername);
                     statement.executeUpdate();
                 }
             }
@@ -171,7 +171,7 @@ public class NativeDatabaseConnector
         }, executorService);
     }
 
-    public CompletableFuture<Void> updatePlayerPassword(UUID uuid, String password)
+    public CompletableFuture<Void> tryUpdateRegistration(UUID uuid, String newUsername, String newPassword)
     {
         return CompletableFuture.runAsync(() ->
         {
@@ -179,14 +179,13 @@ public class NativeDatabaseConnector
 
             try
             {
-                var byteUUID = TypeConversionUtil.uuidToBytes(uuid);
-                var hashedPassword = hashPassword(password);
                 connection = connectionPool.take();
 
-                try (var statement = connection.prepareStatement("UPDATE scallywag_players SET password = ? WHERE uuid = ?"))
+                try (var statement = connection.prepareStatement("UPDATE scallywag_players SET username = ?, password = ? WHERE uuid = ?"))
                 {
-                    statement.setString(1, hashedPassword);
-                    statement.setBytes(2, byteUUID);
+                    statement.setString(1, newUsername);
+                    statement.setString(2, hashPassword(newPassword));
+                    statement.setBytes(3, TypeConversionUtil.uuidToBytes(uuid));
                     statement.executeUpdate();
                 }
             }
@@ -354,8 +353,6 @@ public class NativeDatabaseConnector
 
     public void shutdown() throws SQLException
     {
-        executorService.shutdown();
-
         for (var connection : connectionPool)
         {
             connection.close();

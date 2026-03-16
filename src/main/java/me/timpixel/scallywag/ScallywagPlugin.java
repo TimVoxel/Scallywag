@@ -4,8 +4,6 @@ import me.timpixel.scallywag.commands.*;
 import me.timpixel.scallywag.database.NativeDatabaseConnector;
 import me.timpixel.scallywag.exceptions.ScallywagAuthenticationSetException;
 import me.timpixel.scallywag.exceptions.ScallywagNativeSourceException;
-import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
-import me.timpixel.scallywag.exceptions.ScallywagUninitializedException;
 import me.timpixel.scallywag.listeners.PlayerJoinQuitListener;
 import me.timpixel.scallywag.listeners.UnauthorisedPlayerListener;
 import me.timpixel.scallywag.logging.PasswordLogFilter;
@@ -19,11 +17,13 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
 import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolder, RegistrationHolder
+public class ScallywagPlugin extends JavaPlugin implements Scallywag
 {
     static
     {
@@ -32,11 +32,10 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
 
     private static ScallywagPlugin instance;
     private Logger logger;
-    private NativeDatabaseConnector nativeDatabaseConnector;
-    private AuthenticationSource authenticationSource;
 
-    private LoginManager loginManager = null;
-    private RegistrationManager registrationManager = null;
+    private NativeDatabaseConnector nativeDatabaseConnector;
+    private ExecutorService executorService;
+    private AuthenticationManager authenticationManager;
 
     private static Permission adminPermission;
 
@@ -49,12 +48,16 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
         ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger()).addFilter(new PasswordLogFilter());
 
         var config = new ScallywagConfig(getConfig(), new File(getDataFolder(), "config.yml"));
-        authenticationSource = config.authenticationSource();
+
+        var authenticationSource = config.authenticationSource();
+        authenticationManager = new AuthenticationManager(this, config.isAutoLogInUponRegistration(), authenticationSource);
 
         logger.info("Authentication source: " + authenticationSource);
 
         if (authenticationSource == AuthenticationSource.NATIVE_DATABASE)
         {
+            executorService = Executors.newFixedThreadPool(config.threadPoolSize());
+
             try
             {
                 initializeNativeAuthenticator(config);
@@ -70,10 +73,10 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
         var allowPlayerRegistration = config.isAllowPlayerRegistration();
         var allowPlayerPasswordChanging = config.isAllowPlayerPasswordChanging();
 
-        registerCommand("register", new RegisterCommand(this, allowPlayerRegistration));
-        registerCommand("login", new LoginCommand(this));
-        registerCommand("registration", new RegistrationCommand(this));
-        registerCommand("password", new PasswordCommand(this, allowPlayerPasswordChanging));
+        registerCommand("register", new RegisterCommand(authenticationManager, allowPlayerRegistration));
+        registerCommand("login", new LoginCommand(authenticationManager));
+        registerCommand("registration", new RegistrationCommand(authenticationManager));
+        registerCommand("password", new PasswordCommand(authenticationManager, allowPlayerPasswordChanging));
 
         Integer timeOutTime = null;
         var timeOutTimeRaw = config.timeOutSeconds();
@@ -92,16 +95,50 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
         logger.info("Scallywag authentication plugin enabled successfully");
     }
 
+    @Override
+    public void onDisable()
+    {
+        logger.info("Disabled Scallywag authentication plugin");
+
+        if (executorService != null)
+        {
+            executorService.shutdown();
+        }
+
+        if (nativeDatabaseConnector != null)
+        {
+            try
+            {
+                nativeDatabaseConnector.shutdown();
+            }
+            catch (SQLException exception)
+            {
+                logger.log(Level.SEVERE, "Unable to shutdown database due to an exception: ", exception);
+            }
+        }
+    }
+
     private void initializeNativeAuthenticator(ScallywagConfig config) throws SQLException
     {
         logger.info("Connecting to the native database...");
-        nativeDatabaseConnector = NativeDatabaseConnector.tryCreate(config.databaseConnectionInfo());
+        nativeDatabaseConnector = NativeDatabaseConnector.tryCreate(config.databaseConnectionInfo(), executorService);
         nativeDatabaseConnector.init();
-        var automaticallyLogInUponRegistration = config.isAutoLogInUponRegistration();
 
-        var authenticationManager = new NativeDatabaseAuthenticationManager(this, nativeDatabaseConnector, automaticallyLogInUponRegistration);
-        loginManager = authenticationManager;
-        registrationManager = authenticationManager;
+        var registrationManager = new NativeDatabaseAuthenticationHandler(executorService, nativeDatabaseConnector);
+
+        try
+        {
+            authenticationManager.setAuthenticationHandler(registrationManager);
+        }
+        catch (ScallywagAuthenticationSetException exception)
+        {
+            logger.log(Level.SEVERE, "Unable to set the native database authentication handler, a different handler has already been set", exception);
+        }
+        catch (ScallywagNativeSourceException exception)
+        {
+            throw new RuntimeException("Impossible", exception);
+        }
+        authenticationManager.setPasswordValidator(s -> true); //TODO: add native validation
     }
 
     private void registerEvents(ScallywagConfig config,
@@ -111,14 +148,14 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
 
         if (config.isFreezeUnauthorisedPlayers())
         {
-            var unauthorisedPlayerListener = new UnauthorisedPlayerListener(loginManager,
+            var unauthorisedPlayerListener = new UnauthorisedPlayerListener(authenticationManager,
                     config.isSetUnauthorisedInvulnerable(),
                     config.isApplyDarknessToUnauthorisedPlayers(),
                     config.limboLocation());
             pluginManager.registerEvents(unauthorisedPlayerListener, this);
         }
 
-        var playerJoinListener = new PlayerJoinQuitListener(loginManager,
+        var playerJoinListener = new PlayerJoinQuitListener(authenticationManager,
                 config.isKeepQuittersLoggedIn(),
                 timeOutSeconds,
                 this);
@@ -141,60 +178,6 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
         }
     }
 
-    @Override
-    public void onDisable()
-    {
-        logger.info("Disabled Scallywag authentication plugin");
-
-        if (loginManager instanceof NativeDatabaseAuthenticationManager databaseRegistrationManager)
-        {
-            databaseRegistrationManager.shutdown();
-        }
-
-        if (nativeDatabaseConnector != null)
-        {
-            try
-            {
-                nativeDatabaseConnector.shutdown();
-            }
-            catch (SQLException exception)
-            {
-                logger.log(Level.SEVERE, "Unable to shutdown database due to an exception: ", exception);
-            }
-        }
-    }
-
-    @ApiStatus.Internal
-    @Override
-    public void set(LoginManager manager) throws ScallywagUninitializedException,
-            ScallywagNativeSourceException, ScallywagAuthenticationSetException
-    {
-        if (authenticationSource == null)
-        {
-            throw new ScallywagUninitializedException();
-        }
-        if (authenticationSource == AuthenticationSource.NATIVE_DATABASE)
-        {
-            throw new ScallywagNativeSourceException();
-        }
-        if (loginManager != null)
-        {
-            throw new ScallywagAuthenticationSetException();
-        }
-        loginManager = manager;
-    }
-
-    @ApiStatus.Internal
-    @Override
-    public void set(RegistrationManager manager) throws ScallywagUninitializedException
-    {
-        if (manager == null)
-        {
-            throw new ScallywagUninitializedException();
-        }
-        registrationManager = manager;
-    }
-
     @ApiStatus.Internal
     public static Logger logger()
     {
@@ -202,32 +185,7 @@ public class ScallywagPlugin extends JavaPlugin implements Scallywag, LoginHolde
     }
 
     @ApiStatus.Internal
-    public static LoginHolder login() { return instance; }
-
-    @ApiStatus.Internal
-    public static RegistrationHolder registration() { return instance; }
-
-    @ApiStatus.Internal
-    @Override
-    public LoginManager loginManager() throws ScallywagNoAuthenticationException
-    {
-        if (loginManager == null)
-        {
-            throw new ScallywagNoAuthenticationException();
-        }
-        return loginManager;
-    }
-
-    @ApiStatus.Internal
-    @Override
-    public RegistrationManager registrationManager() throws ScallywagNoAuthenticationException
-    {
-        if (registrationManager == null)
-        {
-            throw new ScallywagNoAuthenticationException();
-        }
-        return registrationManager;
-    }
+    static AuthenticationManager authenticationManager() { return instance.authenticationManager; }
 
     @ApiStatus.Internal
     public static boolean hasAdminPermission(CommandSender sender)

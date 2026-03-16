@@ -39,10 +39,18 @@ public class PasswordLogFilter extends AbstractFilter
 
     private Result shouldLog(String msg)
     {
-        return (msg != null && msg.contains("issued server command:") &&
-                (msg.contains("/login") || msg.contains("/register") || msg.contains("/registration")))
+        return (msg != null && isScallywagLoginCommand(msg))
                 ? Result.DENY
                 : Result.NEUTRAL;
     }
 
+    private boolean isScallywagLoginCommand(String message)
+    {
+        return message.contains("issued server command: /login ") ||
+                message.contains("issued server command: /register ") ||
+                message.contains("issued server command: /registration ") ||
+                message.contains("issued server command: /l") ||
+                message.contains("issued server command: /r") ||
+                message.contains("issued server command: /scallywag:");
+    }
 }

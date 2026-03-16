@@ -1,9 +1,7 @@
 package me.timpixel.scallywag.commands;
 
 import me.timpixel.scallywag.CommandLogger;
-import me.timpixel.scallywag.RegistrationManager;
-import me.timpixel.scallywag.RegistrationVariableProperty;
-import me.timpixel.scallywag.exceptions.ScallywagNoAuthenticationException;
+import me.timpixel.scallywag.results.UpdateResult;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
@@ -38,76 +36,42 @@ public class RegistrationModifyCommand implements SubCommand
         {
             return CommandLogger.error(sender, "Specify the target's uuid or username");
         }
-        if (args.length == 1)
+        if (args.length < 3)
         {
-            return CommandLogger.error(sender, "Specify the property to modify");
-        }
-        if (args.length == 2)
-        {
-            return CommandLogger.error(sender, "Specify the new value");
-        }
-
-        var property = RegistrationVariableProperty.valueOf(args[1]);
-
-        if (property == null)
-        {
-            return CommandLogger.error(sender, "Registrations have no \"" + args[1] + "\" property");
+            return CommandLogger.error(sender, "Specify the new username and password");
         }
 
         var stringUUID = args[0];
-        var value = args[2];
+        var newUsername = args[1];
+        var newPassword = args[2];
         UUID uuid;
 
-        RegistrationManager manager;
-        try
-        {
-            manager = root.holder().registrationManager();
-        }
-        catch (ScallywagNoAuthenticationException exception)
-        {
-            return CommandLogger.error(sender, "Unable to register, no registration manager is set");
-        }
         try
         {
             uuid = UUID.fromString(stringUUID);
-
-            manager.updateRegistrationProperty(uuid, property, value, updateResult ->
-            {
-                switch (updateResult)
-                {
-                    case SUCCESSFUL ->
-                            CommandLogger.info(sender, "Successfully changed " + uuid + " registration " + property.name() + " to " + value);
-                    case REGISTRATION_NOT_FOUND ->
-                            CommandLogger.error(sender, "Unable to find the registration with uuid " + stringUUID);
-                    case VALUE_MATCHES ->
-                            CommandLogger.warning(sender, "Nothing changed, the property " + property.name() + " already has that value");
-                    case INTERNAL_ERROR ->
-                            CommandLogger.error(sender, "Unable to modify registration due to an internal error");
-                    case INVALID_PASSWORD -> CommandLogger.error(sender, "The password is too weak");
-                }
-            });
+            root.manager().tryUpdateRegistration(uuid, newUsername, newPassword).thenAccept(r -> announceResult(r, sender, stringUUID, newUsername));
         }
         catch (IllegalArgumentException exception)
         {
-            var username = args[0];
-
-            manager.updateRegistrationProperty(username, property, value, updateResult ->
-            {
-                switch (updateResult)
-                {
-                    case SUCCESSFUL ->
-                            CommandLogger.info(sender, "Successfully changed " + username + " registration " + property.name() + " to " + value);
-                    case REGISTRATION_NOT_FOUND ->
-                            CommandLogger.error(sender, "Unable to find the registration with username " + username);
-                    case VALUE_MATCHES ->
-                            CommandLogger.warning(sender, "Nothing changed, the property " + property.name() + " already has that value");
-                    case INTERNAL_ERROR ->
-                            CommandLogger.error(sender, "Unable to modify registration due to an internal error");
-                    case INVALID_PASSWORD -> CommandLogger.error(sender, "The password is too weak");
-                }
-            });
+            var oldUsername = args[0];
+            root.manager().tryUpdateRegistration(oldUsername, newUsername, newPassword).thenAccept(r -> announceResult(r, sender, oldUsername, newUsername));
         }
         return true;
+    }
+
+    private void announceResult(UpdateResult result, CommandSender sender, String identifier, String newUsername)
+    {
+        switch (result)
+        {
+            case SUCCESSFUL -> CommandLogger.info(sender, "Successfully changed " + newUsername + "'s registration");
+            case NOT_FOUND -> CommandLogger.error(sender, "Unable to find the registration of " + identifier);
+            case IDENTICAL -> CommandLogger.warning(sender, "Nothing changed, the properties already have that value");
+            case INTERNAL_ERROR ->
+                    CommandLogger.error(sender, "Unable to modify registration due to an internal error");
+            case INVALID -> CommandLogger.error(sender, "The values provided are invalid");
+            case UNSUPPORTED ->
+                CommandLogger.error(sender, "The current authentication handler does not allow editing registrations");
+        }
     }
 
     @Override
@@ -118,22 +82,8 @@ public class RegistrationModifyCommand implements SubCommand
     {
         if (args.length == 1)
         {
-            try
-            {
-                return root.holder().registrationManager().registeredUsernames();
-            }
-            catch (ScallywagNoAuthenticationException exception)
-            {
-                return Collections.emptyList();
-            }
+            return root.manager().registeredUsernames();
         }
-        else if (args.length == 2)
-        {
-            return RegistrationVariableProperty.propertyNames();
-        }
-        else
-        {
-            return Collections.emptyList();
-        }
+        return Collections.emptyList();
     }
 }
